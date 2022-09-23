@@ -25,21 +25,24 @@ The game implementation should be modular and allow something along the lines of
              Isle of Cats - points for creating 'families' of multiple cats
 
 Example games to be supported by V1:
+
+    1. Polyssimo Challenge [implemented here using Pygame]    
+    2. Isle of Cats [mostly implemented using hacky Python in subfolder, to be integrated]
+    3. Patchwork
+    4. Tetris Go
     
-    1. Cartographers [implemented using Flask/Python]
-    2. Bärenpark [mostly implemented using hacky Python]
-    3. Llamaland
-    4. Isle of Cats [mostly implemented using hacky Python]
-    5. Polyssimo Challenge [implemented here using Pygame]
-    6. Kingdomino
-    7. Tetris go
-    8. Patchwork
-    9. My City
-    10. Project L
-    11. Copenhagen
-    12. Helsinki
-    13. Blokus
-    14. FITS
+    ---
+
+    - Kingdomino    
+    - Llamaland
+    - Barenpark
+    - Patchwork
+    - My City
+    - Project L
+    - Copenhagen
+    - Helsinki
+    - Blokus
+    - FITS
 
 (V2 extension: Support hexagonal grids)
 
