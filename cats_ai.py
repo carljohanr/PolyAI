@@ -13,8 +13,8 @@ import sys
 import math
 import random
 import copy
-import piece_poly as piece
-from gui import *
+import piece_cats as piece
+from gui_cats import *
 import copy
 import operator
 import time
@@ -26,7 +26,50 @@ Depth = 1
 MovesToConsider = 4
 # change to adjust the number of games played (defualt 10)
 Games = 1
-TS = 0
+TS = 0.1
+
+Grid = \
+    [[0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0],
+    [0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+    [0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+    [0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0]]
+
+Grid2 = [[0,0,0,0,0,0,0,3,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,1,1,0,0,0,0,0],
+    [0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [1,2,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0],
+    [0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0],
+    [0,0,0,0,0,0,0,0,0,6,0,1,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0]]
+    
+Grid3 = \
+    [[0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0],
+    [0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+    [0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+    [0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0]]
+
+Grid4 = [\
+    [0,0,0,0,0,0,0,3,3,3,3,1,1,1,1,0,0,0,0,0,0,0],
+    [0,0,0,0,3,3,3,3,3,3,3,1,1,1,1,1,6,0,0,0,0,0],
+    [0,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,6,6,6,0,0,0],
+    [2,2,2,2,1,5,5,5,5,5,5,1,1,1,1,1,6,6,6,6,7,0],
+    [2,2,2,2,1,5,5,5,5,5,5,1,1,1,1,1,6,6,6,6,7,7],
+    [2,2,2,2,1,5,5,5,5,5,5,1,1,1,1,1,6,6,6,6,7,0],
+    [0,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,6,6,6,0,0,0],
+    [0,0,0,0,4,4,4,4,4,4,4,1,1,1,1,1,6,0,0,0,0,0],
+    [0,0,0,0,0,0,0,4,4,4,4,1,1,1,1,0,0,0,0,0,0,0]]
 
 # taken from mancala.py, used for alphabeta search
 count = 0
@@ -48,8 +91,6 @@ Names = ['X','T','Z','W','U','F','P','I','L','N','Y','V']
 
 MCounts = [0,0,0,0,0,0,0,0,0,0,0,0]
 
-[piece.C0(),piece.C1(),piece.D0(),piece.Z0(),piece.W0(),piece.X0(),piece.F0(),piece.F1(),piece.F2(),piece.F3(),piece.F4(),piece.F5(),\
-                      piece.I(),piece.L(),piece.V(),piece.W(),piece.F(),piece.X(),piece.N(),piece.Y(),piece.U(),piece.P(),piece.T(),piece.Z()];
 
 ActualEstimatePairs = []
 UselessInit = {
@@ -76,10 +117,13 @@ class Board:
         self.nrow = nrow; # total rows
         self.ncol = ncol; # total columns
 
-        self.state = [['_'] * ncol for i in range(nrow)];
+        self.state = [[0] * ncol for i in range(nrow)];
         self.state2 = [[0] * ncol for i in range(nrow)];
+        self.state3 = copy.deepcopy(Grid4); # Rooms on the board, also signifies valid placements
+        self.state4 = copy.deepcopy(Grid2); # Resources on the board
+        self.adj_state = [[0] * ncol for i in range(nrow)];
 
-    def update(self, player_id, placement):
+    def update(self, player_id, placement,color):
         
         #print(self.state)
         #print(self.state2)
@@ -87,31 +131,34 @@ class Board:
         for row in range(self.nrow):
             for col in range(self.ncol):
                 if(col, row) in placement:
-                    self.state[row][col] = player_id;
+                    self.state[row][col] = color;
                     self.state2[row][col] = maxval+1
 
     # Check if the point (y, x) is within the board's bound
     def in_bounds(self, point):
-        return 0<= point[0] < self.ncol and 0<= point[1] < self.nrow;
+        y = point[1]
+        x = point[0]
+        return 0<= point[0] < self.ncol and 0<= point[1] < self.nrow and self.state3[y][x]>0; ## Add condition for actually being on the board
 
     # Check if a piece placement overlap another piece on the board
     def overlap(self, placement):
-        return False in[(self.state[y][x] == '_') for x, y in placement]
+        return False in[(self.state[y][x] == 0) for x, y in placement]
+
 
     # Checks if a piece placement is adjacent to any square on
     # the board which are occupied by the player proposing the move.
-    def adj(self, player_id, placement):
+    def adj(self, placement):
         adjacents = [];
         # Check left, right, up, down for adjacent square
         for x, y in placement:
             if self.in_bounds((x + 1, y)):
-                adjacents += [self.state[y][x + 1] == player_id];
+                adjacents += [self.state[y][x + 1] > 0];
             if self.in_bounds((x -1, y)):
-                adjacents += [self.state[y][x - 1] == player_id];
+                adjacents += [self.state[y][x - 1] > 0];
             if self.in_bounds((x, y -1)):
-                adjacents += [self.state[y - 1][x] == player_id];
+                adjacents += [self.state[y - 1][x] > 0];
             if self.in_bounds((x, y + 1)):
-                adjacents += [self.state[y + 1][x] == player_id];
+                adjacents += [self.state[y + 1][x] > 0];
 
         return True in adjacents;
 
@@ -134,13 +181,13 @@ class Board:
 
 
 # Player Class
-# DC-Claire
 class Player:
-    def __init__(self, id, strategy):
+    def __init__(self, id, board, strategy):
         self.id = id # player's id
         self.pieces = [] # player's unused game piece, list of Pieces
         self.corners = set() # current valid corners on board
         self.strategy = strategy # player's strategy
+        self.board = board
         self.score = 0 # player's current score
         self.is_blocked = False
 
@@ -152,9 +199,6 @@ class Player:
     def remove_piece(self, piece):
         self.pieces = [p for p in self.pieces if p.id != piece.id];
 
-    # Set the available starting corners for players
-    def start_corner(self, p):
-        self.corners = set([p])
 
     # Updates player information after placing a board Piece
     def update_player(self, piece, board):
@@ -170,21 +214,25 @@ class Player:
         # corners have been covered by another player's pieces.
         locations = []
         t_counter = 0
-        for i in range(12):
-            for j in range(11):
+        # Why is this hardcoded?
+        for i in range(22):
+            for j in range(9):
                 locations.append((i,j))
         
-        self.corners = set([(x, y) for(x, y) in locations
-                            if game.board.state[y][x] == '_']);
+        self.free_spaces = set([(x, y) for(x, y) in locations
+                            if self.board.state[y][x] == 0 and self.board.state3[y][x]>0]);
+        
+        # print(self.free_spaces)
         # self.corners = set([(x, y) for(x, y) in self.corners
         #                     if game.board.state[y][x] == '_']);
 
         placements = [] # a list of possible placements
+        colors = []
         visited = [] # a list placements (a set of points on board)
 
         # Check every available corner
         num = 0
-        for cr in self.corners:
+        for cr in self.free_spaces:
             # Check every available piece
             for sh in pieces:
                 # Check every flip
@@ -201,10 +249,12 @@ class Player:
                         if game.valid_move(self, candidate.points):
                             if not set(candidate.points) in visited:
                                 placements.append(candidate);
+                                colors.append(sh.color)
+                                # print('Piece:' + str(sh.color))
                                 visited.append(set(candidate.points));
                                     
         # print(t_counter)
-        return placements;
+        return placements,colors;
 
     def plausible_moves(self, pieces, game, cutoff, pid):
         placements = []
@@ -228,6 +278,8 @@ class Blokus:
         self.rounds = 0; 
         self.board = board; 
         self.all_pieces = all_pieces; 
+        self.all_pieces = random.sample(self.all_pieces,len(all_pieces))
+        self.pieces = []
         self.previous = 0;
         # counter for how many times the total available moves are the same by checking previous round
         self.repeat = 0; 
@@ -235,15 +287,15 @@ class Blokus:
 
     # Check if a player's move is valid, including board bounds, pieces' overlap, adjacency, and corners.
     def valid_move(self, player, placement):
-        if self.rounds < len(self.players):
-            # Check for starting corner
-            return not ((False in [self.board.in_bounds(pt) for pt in placement])
-                        or self.board.overlap(placement)
-                        or not (True in[(pt in player.corners) for pt in placement]));
-        return not ((False in[self.board.in_bounds(pt) for pt in placement])
-                    or self.board.overlap(placement));
-                    # or self.board.adj(player.id, placement)
-                    # or not self.board.corner(player.id, placement));
+        if ((False in [player.board.in_bounds(pt) for pt in placement]) or player.board.overlap(placement)) or \
+            (self.rounds >= len(self.players) and player.board.adj(placement) == False):
+            return False
+        else:
+            return True
+        
+    # Remove a player's Piece
+    def remove_piece(self, piece):
+        self.pieces = [p for p in self.pieces if p.id != piece.id];
 
     # Play the game with the list of players sequentially until the
     # game ends (no more pieces can be placed for any player)
@@ -256,34 +308,21 @@ class Blokus:
         # print(time.time()-t)
         # At the beginning of the game, it should
         # give the players their pieces and a corner to start.
-        if self.rounds == 0: # set up starting corners and players' initial pieces
-            fl1 = random.sample(range(12),6)
-            fl2 = random.sample(range(12),6)
-            # fl2 = [0,1,4,5,8,10] # Fair draw
-            # fl2 = [0,2,3,5,10,11] # Worst possible tiles for P1
-            pl0=[]
-            pl1=[]
-            ap = list(self.all_pieces)
-            for j in range(24):
-                if j in fl1 or j-12 in fl2:
-                    pl0.append(ap[j])
-                else:
-                    pl1.append(ap[j])
-                    
-            pl0 = random.sample(pl0[0:6],6)+random.sample(pl0[6:12],6)
-            pl1 = random.sample(pl1[0:6],6)+random.sample(pl1[6:12],6)
-                    
-            # print(len(pl0),pl0)
-            # print(len(pl1),pl1)
-                    
-            self.players[0].add_pieces(pl0)
-            self.players[1].add_pieces(pl1)
-        
-        # print(time.time()-t)
+        if self.rounds%8 == 0 and self.rounds<40: # set up starting corners and players' initial pieces
+            for i in range(8):    
+                self.pieces.append(self.all_pieces[0])
+                self.all_pieces.pop(0)
         
         current = self.players[0]
 
-        proposal = current.next_move(self); # get the next move based on
+        if self.players[0].id == 1:
+            firstp = self.players[0]
+            secondp = self.players[1]
+        else:
+            secondp = self.players[0]
+            firstp = self.players[1]            
+
+        proposal,color = current.next_move(self); # get the next move based on
                                             # the player's strategy
 
         # print(time.time()-t)
@@ -293,20 +332,19 @@ class Blokus:
             if self.valid_move(current, proposal.points):
                 # update the board and the player status
                 # print(time.time()-t)
-                self.board.update(current.id, proposal.points);
+                current.board.update(current.id, proposal.points,color);
                 current.update_player(proposal, self.board);
-                current.remove_piece(proposal); # remove used piece
-                if self.players[0].id == 1:
-                    render(self.board.state,self.board.state2,self.players[0].pieces,self.players[1].pieces)
-                else:
-                    render(self.board.state,self.board.state2,self.players[1].pieces,self.players[0].pieces)                            
+                self.remove_piece(proposal); # remove used piece
+                render([firstp.board.state,firstp.board.state2,firstp.board.state3],\
+                       [secondp.board.state,secondp.board.state2,secondp.board.state3],self.pieces,self.pieces)                     
                 # print(time.time()-t)
 
             else: # end the game if an invalid move is proposed
                 raise Exception("Invalid move by player "+ str(current.id));
         # put the current player to the back of the queue
-        first = self.players.pop(0);
-        self.players += [first];
+        if self.rounds%8 != 7:
+            first = self.players.pop(0);
+            self.players += [first];
         self.rounds += 1; # update game round
 
     def make_move(self, move, state):
@@ -411,15 +449,17 @@ def placement_prompt(possibles):
 # Random Strategy: choose an available piece randomly
 # DC
 def Random_Player(player, game):
-    options = [p for p in player.pieces];
+    options = [p for p in game.pieces];
     while len(options) > 0: # if there are still possible moves
         piece = random.choice(options);
-        possibles = player.possible_moves([piece], game);
+        possibles,colors = player.possible_moves([piece], game);
         if len(possibles) != 0: # if there is possible moves
-            return random.choice(possibles);
+            m = random.randint(0,len(possibles)-1)
+            print(len(possibles))
+            return possibles[m],colors[m]
         else: # no possible move for that piece
             options.remove(piece); # remove it from the options
-    return None; # no possible move left
+    return None, None; # no possible move left
 
 # Tyler - AI implementation, created a better opponent to test against
 # Largest Strategy: play a random available move for the largest piece possible
@@ -690,9 +730,7 @@ def Human_Player_Fast(player, game):
         return None; # no possible move left
 
 
-
-
-# Tyler - AI implementation, based off of BoardState from mancala.py
+# Board state is no longer used
 class BoardState:
     """Holds one state of the Blokus board, used to generate successors."""
     def __init__(self, game=None):
@@ -741,24 +779,48 @@ def multi_run(repeat, one, two):
         global MoveTimes
         MoveTimes = [] # Reset
         order = []; # Reset
-        P1 = Player(1, one) # first player
-        P2 = Player(2, two) # second player
         
         # Tyler - AI implementation
         # add pieces in order from largest to smallest
-        all_pieces = [piece.C0(),piece.C1(),piece.D0(),piece.Z0(),piece.W0(),piece.X0(),piece.F0(),piece.F1(),piece.F2(),piece.F3(),piece.F4(),piece.F5(),\
-                      piece.I(),piece.L(),piece.V(),piece.W(),piece.F(),piece.X(),piece.N(),piece.Y(),piece.U(),piece.P(),piece.T(),piece.Z()];
+        all_pieces = []
+        for i in range(1,6):
+            all_pieces.append(piece.I(i));
+            all_pieces.append(piece.T(i));
+            all_pieces.append(piece.X(i));
+            all_pieces.append(piece.V(i));
+            all_pieces.append(piece.W(i));
+            all_pieces.append(piece.L(i));
+            all_pieces.append(piece.U(i));
+            all_pieces.append(piece.P(i));
+            all_pieces.append(piece.N(i));
+            all_pieces.append(piece.Y(i));
+            all_pieces.append(piece.N0(i));
+            all_pieces.append(piece.N1(i));
+            all_pieces.append(piece.T0(i));
+            all_pieces.append(piece.T1(i));
+            all_pieces.append(piece.P0(i));
+            all_pieces.append(piece.P1(i));
+            all_pieces.append(piece.NN(i));            
 
-        board = Board(11, 12);
+        board = Board(9, 22);
+        board1 = Board(9, 22);
+        board2 = Board(9, 22);
+
+        P1 = Player(1, board1, one) # first player
+        P2 = Player(2, board2, two) # second player
+
         order = [P1, P2];
         blokus = Blokus(order, board, all_pieces);
         play_blokus(blokus);
 
         # End of game display.
-        if blokus.players[0].id == 1:
-            render(blokus.board.state,blokus.board.state2,blokus.players[0].pieces,blokus.players[1].pieces)
-        else:
-            render(blokus.board.state,blokus.board.state2,blokus.players[1].pieces,blokus.players[0].pieces)            
+        
+        firstp = P1
+        secondp = P2  
+        
+        render([firstp.board.state,firstp.board.state2,firstp.board.state3],\
+        [secondp.board.state,secondp.board.state2,secondp.board.state3],P1.pieces,P2.pieces)  
+                
         blokus.play();
         plist = sorted(blokus.players, key = lambda p: p.id);
         gscores = []
@@ -854,7 +916,7 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    multi_run(Games, Greedy_Player_v2, Greedy_Player_v2);
+    multi_run(Games, Random_Player, Random_Player);
 
 if __name__ == '__main__':
     main();

@@ -675,6 +675,11 @@ def pCounter(counts):
     return sq
 
 def main(ran,verbose=0):
+    
+    # grid = shapes on the board
+    # grid2 = resources on the board (rats/treasures)
+    # grid3 = move counter (swap with state2)
+    # grid4 = 'rooms' on the board (for scoring)
 
     grid = \
         [[0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0],
@@ -721,6 +726,8 @@ def main(ran,verbose=0):
     
     # board_map = [[0,0,0],[0,1,0]]
     # board_adj_map = [[0,1,0],[1,1,1]]
+    
+    # Defining the deck
     
     pcount_map = [1,1,1,1,1,1,1,1,1,1,1,1,4,4,4,4,8,8,10,20]
     pcount_map = [1]*85
