@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Sep 21 23:50:35 2022
+
+@author: carljohan
+"""
+
+Goal of the project. Extend to support a broader range of polyomino-based games. 
+For example, Isle of Cats (implemented in a hacky way in separate file)
+
+The game implementation should be modular and allow something along the lines of the following:
+    
+    0. Candidate set of pieces in the game
+        E.g. One set of pentominoes and 12 pre-specified hexominoes
+    1. How players get their pieces:
+        E.g. Draft from a pool, simultaneous draw, as resources obtained when playing on the map
+    2. Which moves are legal? 
+        E.g. Place anywhere, adjacent to existing piece, on top of existing pieces etc.
+        The board could be a shared board between the players, or individual player boards (as in many Eurogames)
+    3. How does the game end?
+        E.g. 5 rounds of drafting 8 pieces in each
+    4. How does a player win?
+        E.g. Blokus - points for the sizes of pieces placed during the game;
+             Isle of Cats - points for creating 'families' of multiple cats
+
+Example games to be supported by V1:
+    
+    1. Cartographers [implemented using Flask/Python]
+    2. Bärenpark [mostly implemented using hacky Python]
+    3. Llamaland
+    4. Isle of Cats [mostly implemented using hacky Python]
+    5. Polyssimo Challenge [implemented here using Pygame]
+    6. Kingdomino
+    7. Tetris go
+    8. Patchwork
+    9. My City
+    10. Project L
+    11. Copenhagen
+    12. Helsinki
+    13. Blokus
+    14. FITS
+
+(V2 extension: Support hexagonal grids)
+
+Many of the games have high/very high branching factor for each move (1000s). 
