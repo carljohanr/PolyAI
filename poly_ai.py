@@ -76,7 +76,9 @@ class Board:
         self.nrow = nrow; # total rows
         self.ncol = ncol; # total columns
 
+        # State keeps track of the board position
         self.state = [['_'] * ncol for i in range(nrow)];
+        # State 2 keeps track of individual pieces for nicer rendering
         self.state2 = [[0] * ncol for i in range(nrow)];
 
     def update(self, player_id, placement):
@@ -97,6 +99,9 @@ class Board:
     # Check if a piece placement overlap another piece on the board
     def overlap(self, placement):
         return False in[(self.state[y][x] == '_') for x, y in placement]
+
+
+    # The following two functions are only used for the Blokus player, but illustrates how additional functions/conditions could be imposed on placements.
 
     # Checks if a piece placement is adjacent to any square on
     # the board which are occupied by the player proposing the move.
@@ -206,6 +211,8 @@ class Player:
         # print(t_counter)
         return placements;
 
+
+    # This function returns a limited number of moves (e.g. for faster search) but is only useful if the moves are ranked
     def plausible_moves(self, pieces, game, cutoff, pid):
         placements = []
         for piece in pieces:
@@ -260,6 +267,9 @@ class Blokus:
             max_x = self.board.ncol -1;
             max_y = self.board.nrow -1;
             starts = [(0, 0), (max_x, max_y), (0, max_y), (max_x, 0)];
+            
+            
+            # Logic for distributing pieces across the players. Each player gets 6 hexominoes and 6 pentominoes
             fl1 = random.sample(range(12),6)
             fl2 = random.sample(range(12),6)
             # fl2 = [0,1,4,5,8,10] # Fair draw
@@ -312,6 +322,7 @@ class Blokus:
         self.players += [first];
         self.rounds += 1; # update game round
 
+    # This function is probably not used
     def make_move(self, move, state):
         "Return a new BoardState reflecting move made from given board state."
         # make a copy of the given state to be updated
@@ -343,6 +354,7 @@ class Blokus:
         return not state.to_move.plausible_moves(state.to_move.pieces, state.game, 1, state.to_move.id)
 
 # This function will prompt the user for their piece
+# Can be simplified since the UI displays the pieces. But would be better to develop UI for placing pieces.
 def piece_prompt(options):
     # Create an array with the valid piece names
     option_names = [str(x.id) for x in options];
@@ -412,7 +424,6 @@ def placement_prompt(possibles):
     return placement;    
 
 # Random Strategy: choose an available piece randomly
-# DC
 def Random_Player(player, game):
     options = [p for p in player.pieces];
     while len(options) > 0: # if there are still possible moves
@@ -424,7 +435,6 @@ def Random_Player(player, game):
             options.remove(piece); # remove it from the options
     return None; # no possible move left
 
-# Tyler - AI implementation, created a better opponent to test against
 # Largest Strategy: play a random available move for the largest piece possible
 def Largest_Player(player, game):
     # pieces are already in order from largest to smallest
@@ -438,9 +448,11 @@ def Largest_Player(player, game):
     return None
 
 def Greedy_Player_v2(player, game):
-    # pieces are already in order from largest to smallest
-    # iterate through and make the first possible move
+    # Evaluate possible placements for both players, evaluation function checks the numbers of locations that are only accessible to one of the two players
+    # Extends greedy player by adding checks for creating 'reserved spaces' for the same piece twice, and adjusting evaluation for that.
     
+    # Rough pruning of moves to improve speed, mostly for testing (simplify strategy used on first few moves when branching factor is higher)
+    # Could replace with simple heuristics, e.g. place near the edge of the board
     
     turn_number = (TotalStartingPieces - len(player.pieces) + 1)
 
@@ -495,7 +507,7 @@ def Greedy_Player_v2(player, game):
             all_possibles += possibles
             temp_counter = 0
             # print('#Moves: ' + str(len(possibles)))
-            if len(possibles) != 0: # if there is possible moves
+            if len(possibles) != 0: # if there is possible moves for this piece (not even needed?)
                 
                 for m in possibles:
                     temp_counter +=1
@@ -506,15 +518,13 @@ def Greedy_Player_v2(player, game):
                     # time.sleep(10)
                     # print(this_player.pieces, p)
                     # new_pieces = copy.deepcopy(this_player.pieces).pop(pcounter)
-                    
+
                     p1set = set()
                     p2set = set()
                     
                     adj_value = 0
                     t_adj_value1 = 0
                     t_adj_value2 = 0
-                    
-
                     
                     # Nice improvement where available moves are updated iteratively instead of re-generating with every move.
                     for t in temp_set1:
@@ -575,8 +585,7 @@ def Greedy_Player_v2(player, game):
 
 
 def Greedy_Player(player, game):
-    # pieces are already in order from largest to smallest
-    # iterate through and make the first possible move
+    # Evaluate possible placements for both players, evaluation function checks the numbers of locations that are only accessible to one of the two players
     
     
     turn_number = (TotalStartingPieces - len(player.pieces) + 1)
@@ -857,7 +866,7 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    multi_run(Games, Greedy_Player_v2, Greedy_Player_v2);
+    multi_run(Games, Greedy_Player, Greedy_Player);
 
 if __name__ == '__main__':
     main();
