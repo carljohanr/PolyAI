@@ -85,6 +85,7 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
         board = boards[0]
         pieces = boards[1]
         rooms = boards[2]
+        items = boards[3]
         
         hsize = len(board)
         vsize = len(board[0])        
@@ -121,12 +122,15 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
  
         color_map = [(0,0,255),(0,255,0),(255,0,0),(255,255,255)]
         color_map = [(126, 67, 177),(26, 148, 208),(83, 198, 56),(239, 130, 40),(222, 68, 57),(155,103,60)]
+        black = (0,0,0)
+        white = (255,255,255)
         
         y = y_adj
         for i in range(len(board)):   
             x = 120
             for j in range(len(board[i])):
                 this_loc = board[i][j]
+                this_item = items[i][j]
                 #print("The current element is " + str(board[i][j]))
                 rc_map = [0,1,1,1,2,3,1]
                 if rooms[i][j]>0:
@@ -136,9 +140,22 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
                 else:
                     useless = 0
                     # pygame.draw.rect(screen,(255,255,255), (x+pads, y+pads, size-2*pads, size-2*pads), 0)                    
-                if this_loc in [1,2,3,4,5]:
+                if this_loc in [1,2,3,4,5,6]:
                     this_color = color_map[this_loc-1]
                     pygame.draw.rect(screen,this_color, (x+pad, y+pad, size-2*pad, size-2*pad), 0)
+                # Items/resources on board
+                if this_item in [2,3,4,5,6]:
+                    if this_loc == this_item-1:
+                        this_color = white
+                    else:
+                        this_color = color_map[this_item-2]
+                    pygame.draw.rect(screen,this_color, (x+3*pad, y+3*pad, size-6*pad, size-6*pad), 0)
+                elif this_item in [1]:
+                    if this_loc>0:
+                        this_color = (120,120,120)
+                    else:
+                        this_color = black
+                    pygame.draw.rect(screen,this_color, (x+3*pad, y+3*pad, size-6*pad, size-6*pad), 0)
                 else:
                     # pygame.draw.rect(screen, (255,255,255), (x+pad, y+pad, size-2*pad, size-2*pad), 0)   
                     useless = 0
@@ -151,7 +168,7 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
             for j in range(len(board[i])):
                 this_loc = board[i][j]
                 #print("The current element is " + str(board[i][j]))
-                if this_loc in [1,2,3,4,5]:
+                if this_loc in [1,2,3,4,5,6]:
                     this_color = color_map[this_loc-1]
                     if j<len(board[i])-1 and pieces[i][j] == pieces[i][j+1]:
                         # pygame.draw.rect(screen,(255,255,255), (x+size-pads, y+pads, 2*pads, size-2*pads), 0)
@@ -169,7 +186,7 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
             for j in range(len(board[i])):
                 this_loc = board[i][j]
                 #print("The current element is " + str(board[i][j]))
-                if this_loc in [1,2,3,4,5]:
+                if this_loc in [1,2,3,4,5,6]:
                     this_color = color_map[this_loc-1]
                     if j<len(board[i])-1 and i<len(board)-1 and pieces[i][j] == pieces[i][j+1] == pieces[i+1][j] == pieces [i+1][j+1]:
                         pygame.draw.rect(screen,this_color, (x+size-pad, y+size-pad, 2*pad, 2*pad), 0) 

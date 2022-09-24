@@ -25,6 +25,8 @@ import copy
 
 four_directions = [[0,1],[0,-1],[1,0],[-1,0]]
 
+adj = 0.2
+
 def explore(grid, x, y, visited, groups,n):
     groups[-1].append((x, y))
     visited.add((x, y))
@@ -47,37 +49,56 @@ def connected_cells(grid, visited, groups, n):
                 explore(grid, i, j, visited, groups, n)
     return groups
 
-def score_board(grid,grid2,grid4):
+def score_board(grid,grid2,grid3,grid4,option = 1):
     
-    famscores = [0,2,5,8,11,15,20,25,30,35,40,45,50,55,60]
+    famscore = [0,0,0,8,11,15,20,25,30,35,40,45,50,55,60]
+    fampotential = [0,2,6,10,15,20,25,30,35,40,45,50,55,60,65]
     roomfilled = [0,0,0,0,0,0,0]
     roomsizes = [60, 18, 11, 11, 18, 20, 4]
     hall = []
     
     this_score = 0 
+    this_potential = 0
+    rats = 0
+    treasures = 0
     
 
     for i in range(1,6):
        groups = list()
        visited = set()
        ifams = connected_cells(grid, visited, groups, i)
-       hsizes = [len(hole) for hole in ifams]
+       hsizes = sorted([len(hole) for hole in ifams], reverse = True)
        # print(hsizes)
        if len(ifams)>0:
-           hscores = [famscores[int((len(ifam)+1)/5)] for ifam in ifams]
+           hpotential = [fampotential[int((len(ifam)+1)/5)] for ifam in ifams[0:2]]
+           hscores = [famscore[int((len(ifam)+1)/5)] for ifam in ifams]
            hall += hscores
-           this_score += sum(hscores)   
+           this_potential += sum(hpotential)   
+           this_score += sum(hscores)
  
     for i in range(len(grid)):
         for j in range(len(grid[0])):
-            if grid4[i][j]>0 and grid[i][j]>1:
-                roomfilled[grid4[i][j]-1] += 1
+            if grid3[i][j]>0 and grid[i][j]>1:
+                roomfilled[grid3[i][j]-1] += 1
+            if grid4[i][j] == 1 and grid[i][j]>1:
+                rats+=1
+            if grid4[i][j] > 1 and grid[i][j]==grid4[i][j]-1:
+                treasures+=1
+            elif grid[i][j] > 1 and grid4[i][j] > 1 and grid[i][j]!=grid4[i][j]-1:
+                treasures-=1
                 
     rleft = [r1-r2 for (r1,r2) in zip(roomsizes,roomfilled)]
                 
     for r in rleft:
-        this_score += 5*1/(r+1)
+        this_potential += 5*1/(r+1)
+        if r == 0:
+            this_score += 5
         
+    this_potential += 2*treasures
+    this_potential += 0.5*rats
+    
+    this_score += rats
+      
     # print('Grid + score:')
     # print(grid)
     # print(grid4)
@@ -90,45 +111,18 @@ def score_board(grid,grid2,grid4):
 
     for  i in range(len(grid)-1):
         for j in range(len(grid[0])):
-            if min(grid[i][j],grid[i+1][j])>0:
-                this_score-=0.1*abs(grid[i][j]-grid[i+1][j])
+            if min(grid3[i][j],grid3[i+1][j])>0:
+                this_potential-=adj*abs(grid[i][j]-grid[i+1][j])
 
     for  i in range(len(grid)):
         for j in range(len(grid[0])-1):
-            if min(grid[i][j],grid[i][j+1])>0:
-                this_score-=0.1*abs(grid[i][j]-grid[i][j+1])
-
-    # for  i in range(len(grid)):
-    #     for j in range(len(grid[0])):
-    #         this_score+=10*gridt[i][j]
+            if min(grid3[i][j],grid3[i][j+1])>0:
+                this_potential-=adj*abs(grid[i][j]-grid[i][j+1])
 
 
-    for i in range(len(grid)):
-        for j in range(len(grid[0])):
-            if grid[i][j] > 0: 
-                # this_score += grid[i][j]*0.25*((i-5.5)**2+(j-5.5)**2)
-                # this_score += 0.2*((i-5.5)**2+(j-5.5)**2)
-                this_score += 0
-                
-
-
-                    
-
-                
-    # groups = list()
-    # visited = set()
-    # holes = connected_cells(gridt, visited, groups, 1)
-    
-    # hsizes = [len(hole) for hole in holes]
-
-
-    # for i in range(len(hsizes)):
-    #     this_score -= 5/hsizes[i]
-            
-    # this_score -= 5*len(holes)
-
-
-
-    return this_score, hall
+    if option == 1:
+        return this_potential, hall
+    else:
+        return this_score, this_potential
 
 

@@ -67,12 +67,114 @@ Define 17 shapes in Isle of Cats base game
 '''
 
 
-big_pieces = [[[1,0,0],[1,1,1],[1,0,1]],[[1,1,1,1],[0,1,0,0],[0,1,0,0]],[[1,1,1,0],[0,1,1,1]],\
-            [[0,1,1],[1,1,1],[0,0,1]],[[0,1,0,0],[1,1,1,1],[0,1,0,0]],[[0,1,1,1],[1,1,0,1]],\
-          [[0,1,0],[1,1,1],[0,1,0]],[[1,1,1],[0,1,0],[0,1,0]],[[1,1,1,1,1]],\
-              [[0,1,1],[1,1,0],[1,0,0]],[[1,1,1],[1,0,0],[1,0,0]],[[1,1,1],[1,0,1]],[[1,1,1],[1,1,0]],\
-        [[0,1,1,1],[1,1,0,0]],[[1,1,1,1],[0,1,0,0]],[[1,1,1,1],[1,0,0,0]],[[1,1,0],[0,1,1]]]
+# big_pieces = [[[1,0,0],[1,1,1],[1,0,1]],[[1,1,1,1],[0,1,0,0],[0,1,0,0]],[[1,1,1,0],[0,1,1,1]],\
+#             [[0,1,1],[1,1,1],[0,0,1]],[[0,1,0,0],[1,1,1,1],[0,1,0,0]],[[0,1,1,1],[1,1,0,1]],\
+#           [[0,1,0],[1,1,1],[0,1,0]],[[1,1,1],[0,1,0],[0,1,0]],[[1,1,1,1,1]],\
+#               [[0,1,1],[1,1,0],[1,0,0]],[[1,1,1],[1,0,0],[1,0,0]],[[1,1,1],[1,0,1]],[[1,1,1],[1,1,0]],\
+#         [[0,1,1,1],[1,1,0,0]],[[1,1,1,1],[0,1,0,0]],[[1,1,1,1],[1,0,0,0]],[[1,1,0],[0,1,1]]]
 
+    
+class TR1(Piece):
+    def __init__(self,color):
+        self.size = 1;
+        self.uniques = 1; # number of unique transformations per piece, for AI
+        self.color=color
+        self.id = 'TR1'+str(self.color);
+        
+    def set_points(self, x, y):
+        self.points = [(x, y)];
+        self.corners = [(x, y)];
+
+class TR2(Piece):
+    def __init__(self,color):
+        self.size = 2;
+        self.uniques = 1; # number of unique transformations per piece, for AI
+        self.color=color
+        self.id = 'TR2'+str(self.color);
+        
+    def set_points(self, x, y):
+        self.points = [(x, y),(x+1,y)];
+        self.corners = [(x, y)];
+        
+class TR3(Piece):
+    def __init__(self,color):
+        self.size = 3;
+        self.uniques = 1; # number of unique transformations per piece, for AI
+        self.color=color
+        self.id = 'TR3'+str(self.color);
+        
+    def set_points(self, x, y):
+        self.points = [(x, y),(x+1,y),(x+2,y)];
+        self.corners = [(x, y)];
+
+class TR4(Piece):
+    def __init__(self,color):
+        self.size = 3;
+        self.uniques = 1; # number of unique transformations per piece, for AI
+        self.color=color
+        self.id = 'TR4'+str(self.color);
+        
+    def set_points(self, x, y):
+        self.points = [(x, y),(x+1,y),(x,y+1)];
+        self.corners = [(x, y)];
+
+class RT1(Piece):
+    def __init__(self,color,counter):
+        self.size = 4;
+        self.uniques = 1; # number of unique transformations per piece, for AI
+        self.color=color
+        self.id = 'RT1'+str(counter);
+        
+    def set_points(self, x, y):
+        self.points = [(x, y),(x+1,y),(x,y+1),(x+1,y+1)];
+        self.corners = [(x, y)];
+
+class RT2(Piece):
+    def __init__(self,color,counter):
+        self.size = 4;
+        self.uniques = 1; # number of unique transformations per piece, for AI
+        self.color=color
+        self.id = 'RT2'+str(counter);
+        
+    def set_points(self, x, y):
+        self.points = [(x, y),(x+1,y+1),(x,y+1),(x+1,y+2)];
+        self.corners = [(x, y)];
+        
+class RT3(Piece):
+    def __init__(self,color,counter):
+        self.size = 4;
+        self.uniques = 1; # number of unique transformations per piece, for AI
+        self.color=color
+        self.id = 'RT3'+str(counter);
+        
+    def set_points(self, x, y):
+        self.points = [(x, y),(x+1,y),(x,y+1),(x+2,y)];
+        self.corners = [(x, y)];
+
+class RT4(Piece):
+    def __init__(self,color,counter):
+        self.size = 4;
+        self.uniques = 1; # number of unique transformations per piece, for AI
+        self.color=color
+        self.id = 'RT4'+str(counter);
+        
+    def set_points(self, x, y):
+        self.points = [(x, y),(x+1,y),(x+1,y+1),(x+2,y)];
+        self.corners = [(x, y)];
+        
+class RT5(Piece):
+    def __init__(self,color,counter):
+        self.size = 4;
+        self.uniques = 1; # number of unique transformations per piece, for AI
+        self.color=color
+        self.id = 'RT5'+str(counter);
+        
+    def set_points(self, x, y):
+        self.points = [(x, y),(x+1,y),(x+2,y),(x+3,y)];
+        self.corners = [(x, y)];
+
+        
+    
 class T0(Piece):
     def __init__(self,color):
         self.size = 6;

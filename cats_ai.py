@@ -28,8 +28,8 @@ Depth = 1
 # number of successor states returned (default 4)
 MovesToConsider = 4
 # change to adjust the number of games played (defualt 10)
-Games = 1
-TS = 1
+Games = 100
+TS = 0
 
 Grid = \
     [[0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0],
@@ -125,7 +125,8 @@ class Board:
         self.state3 = copy.deepcopy(Grid4); # Rooms on the board, also signifies valid placements
         self.state4 = copy.deepcopy(Grid2); # Resources on the board
         self.adj_state = [[0] * ncol for i in range(nrow)];
-
+        self.treasure = 0
+        
     def update(self, player_id, placement,color):
         
         #print(self.state)
@@ -136,6 +137,8 @@ class Board:
                 if(col, row) in placement:
                     self.state[row][col] = color;
                     self.state2[row][col] = maxval+1
+                    if self.state4[row][col]-1 == color:
+                        self.treasure = 1
 
     # Check if the point (y, x) is within the board's bound
     def in_bounds(self, point):
@@ -192,6 +195,7 @@ class Player:
         self.strategy = strategy # player's strategy
         self.board = board
         self.score = 0 # player's current score
+        self.potential = 0
         self.is_blocked = False
 
     # Add the player's initial pieces for a game
@@ -205,7 +209,18 @@ class Player:
 
     # Updates player information after placing a board Piece
     def update_player(self, piece, board):
-        self.score += piece.size;
+        # self.score += piece.size;
+        
+        grid = copy.deepcopy(self.board.state)
+        grid2 = copy.deepcopy(self.board.state2)
+        grid3 = self.board.state3
+        grid4 = self.board.state4
+        
+        self.score, self.potential = score_board(grid, grid2, grid3, grid4, 2)
+        # Score for rooms and rats are counted as negatives
+        self.score -= 54
+        
+        
         for c in piece.corners:
             # Add the player's available corners
             if board.in_bounds(c) and not board.overlap([c]):
@@ -272,7 +287,10 @@ class Player:
 
     # Get the next move based off of the player's strategy
     def next_move(self, game):
-        return self.strategy(self, game);
+        if self.board.treasure == 0:    
+            return self.strategy(self, game, 1)
+        else:
+            return self.strategy(self, game, 0)
 
 
 class Blokus:
@@ -286,12 +304,13 @@ class Blokus:
         self.previous = 0;
         # counter for how many times the total available moves are the same by checking previous round
         self.repeat = 0; 
+        self.treasures = [piece.TR1(6),piece.TR2(6),piece.TR3(6),piece.TR4(6)]
         self.win_player = 0; # winner
 
     # Check if a player's move is valid, including board bounds, pieces' overlap, adjacency, and corners.
     def valid_move(self, player, placement):
         if ((False in [player.board.in_bounds(pt) for pt in placement]) or player.board.overlap(placement)) or \
-            (self.rounds >= len(self.players) and player.board.adj(placement) == False):
+            ((self.rounds >= len(self.players) or player.board.treasure>0) and player.board.adj(placement) == False):
             return False
         else:
             return True
@@ -299,6 +318,9 @@ class Blokus:
     # Remove a player's Piece
     def remove_piece(self, piece):
         self.pieces = [p for p in self.pieces if p.id != piece.id];
+
+    def remove_treasure(self, piece):
+        self.treasures = [p for p in self.treasures if p.id != piece.id];
 
     # Play the game with the list of players sequentially until the
     # game ends (no more pieces can be placed for any player)
@@ -319,13 +341,18 @@ class Blokus:
         
         # Game is played over 5 days, for each day, add 8 pieces to common pool for players to choose between.
         # Repeat 5 times.
+        pcounter = 0
         if self.rounds%8 == 0 and self.rounds<40: 
-            for i in range(8):    
-                self.pieces.append(self.all_pieces[0])
+            while pcounter<8:
+                if self.all_pieces[0].id[0:2]!='RT':
+                    self.pieces.append(self.all_pieces[0])
+                    pcounter+=1
+                else:
+                    self.treasures.append(self.all_pieces[0])
                 self.all_pieces.pop(0)
                 
-            render([firstp.board.state,firstp.board.state2,firstp.board.state3],\
-                       [secondp.board.state,secondp.board.state2,secondp.board.state3],self.pieces,self.pieces)     
+            render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
+                       [secondp.board.state,secondp.board.state2,secondp.board.state3,firstp.board.state4],self.pieces,self.pieces)     
             # time.sleep(TS)
         
        
@@ -343,13 +370,43 @@ class Blokus:
                 current.board.update(current.id, proposal.points,color);
                 current.update_player(proposal, self.board);
                 self.remove_piece(proposal); # remove used piece
-                render([firstp.board.state,firstp.board.state2,firstp.board.state3],\
-                       [secondp.board.state,secondp.board.state2,secondp.board.state3],self.pieces,self.pieces)                     
+                render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
+                       [secondp.board.state,secondp.board.state2,secondp.board.state3,firstp.board.state4],self.pieces,self.pieces)                     
                 # print(time.time()-t)
 
             else: # end the game if an invalid move is proposed
                 raise Exception("Invalid move by player "+ str(current.id));
         # put the current player to the back of the queue
+
+        if current.board.treasure > 0: # If the player obtained a treasure, give him a chance to place it.
+            
+            proposal,color = current.next_move(self); # get the next move based on
+                                            # the player's strategy
+
+            # print(time.time()-t)
+    
+            if proposal is not None: # if there a possible proposed move
+                # check if the move is valid
+                if self.valid_move(current, proposal.points):
+                    # update the board and the player status
+                    # print(time.time()-t)
+                    current.board.update(current.id, proposal.points,color);
+                    current.update_player(proposal, self.board);
+                    if proposal.id[0:2] == 'RT':
+                        self.remove_treasure(proposal);
+                        
+                    # self.remove_piece(proposal); # remove used piece
+                    render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
+                           [secondp.board.state,secondp.board.state2,secondp.board.state3,firstp.board.state4],self.pieces,self.pieces)                     
+                    # print(time.time()-t)
+    
+                else: # end the game if an invalid move is proposed
+                    raise Exception("Invalid move by player "+ str(current.id));
+            # put the current player to the back of the queue
+           
+        current.board.treasure = 0
+            
+
         if self.rounds%8 != 7:
             first = self.players.pop(0);
             self.players += [first];
@@ -358,7 +415,9 @@ class Blokus:
                 self.all_pieces.append(piece)
             self.pieces = []
             self.all_pieces = random.sample(self.all_pieces,len(self.all_pieces))
-                
+        
+
+            
                 
         self.rounds += 1; # update game round
 
@@ -462,8 +521,11 @@ def placement_prompt(possibles):
     return placement;    
 
 # Random Strategy: choose an available piece randomly
-def Random_Player(player, game):
-    options = [p for p in game.pieces];
+def Random_Player(player, game, oval = 1):
+    if oval == 1:
+        options = [p for p in game.pieces];
+    else:
+        options = [p for p in game.treasures]
     while len(options) > 0: # if there are still possible moves
         piece = random.choice(options);
         # Function returns a piece so does not need to return the color as well (possibles[x].color)
@@ -475,9 +537,13 @@ def Random_Player(player, game):
             options.remove(piece); # remove it from the options
     return None, None; # no possible move left
 
-# Random Strategy: choose an available piece randomly
-def Greedy_Player(player, game):
-    options = [p for p in game.pieces];
+# Greedy Strategy: choose an available piece randomly based on own board only
+def Greedy_Player(player, game, oval = 1):
+    if oval == 1:
+        options = [p for p in game.pieces];
+    else:
+        options = [p for p in game.treasures]
+        # print(options)
     scores = []
     all_possibles = []
     debug = []
@@ -485,6 +551,7 @@ def Greedy_Player(player, game):
     for piece in options:
         # print('Piece:', piece)
         possibles,colors = player.possible_moves([piece], game);
+        # print(len(possibles))
         if len(possibles) != 0: # if there is possible moves
             # print(len(possibles),possibles[m].points,possibles[m].color)
             # print(game.players[0].board.state,game.players[0].board.state2,game.players[0].board.state3)
@@ -492,6 +559,7 @@ def Greedy_Player(player, game):
                 grid = copy.deepcopy(game.players[0].board.state)
                 grid2 = copy.deepcopy(game.players[0].board.state2)
                 grid3 = game.players[0].board.state3
+                grid4 = game.players[0].board.state4
                 this_color = possibles[m].color
                 
                 # Should make a copy of the state and use the update function instead
@@ -499,23 +567,127 @@ def Greedy_Player(player, game):
                     grid[p1][p0]=this_color
                     grid2[p1][p0] = maxval+1
                 
-                this_score, fam_dummy = score_board(grid, grid2, grid3)
+                this_score, fam_dummy = score_board(grid, grid2, grid3, grid4)
                 debug.append(fam_dummy)
                 scores.append(this_score)
                 all_possibles.append(possibles[m])
             
-            max_score = -1000
-            for a in range(len(all_possibles)):
-                if scores[a]>max_score:
-                    max_index = a
-                    max_score = scores[a]
-            
-            print(all_possibles[max_index].id,all_possibles[max_index].color,round(scores[a],0),sorted(debug[a],reverse=True))
-            
-            return all_possibles[max_index],all_possibles[max_index].color
+
         else: # no possible move for that piece
             options.remove(piece); # remove it from the options
-    return None, None; # no possible move left
+
+    max_score = -1000
+    if len(all_possibles)>0:
+        for a in range(len(all_possibles)):
+            if scores[a]>max_score:
+                max_index = a
+                max_score = scores[a]
+        # print(all_possibles[max_index].id,all_possibles[max_index].color,round(scores[a],0),sorted(debug[a],reverse=True))
+        return all_possibles[max_index],all_possibles[max_index].color
+    else:
+        return None, None; # no possible move left
+
+
+
+# Greedy Strategy: choose an available piece randomly based on own board only
+def Greedy_Player_v2(player, game, oval = 1):
+    if oval == 1:
+        options = [p for p in game.pieces];
+    else:
+        # Opponent scores don't matter for treasures as they won't be available to the other player
+        move, color = Greedy_Player(player, game, oval)
+        return move, color
+        
+        # options = [p for p in game.treasures]
+        # print(options)
+    scores = []
+    all_possibles = []
+    debug = []
+    p_scores = []
+    maxval = max([max(s) for s in game.players[0].board.state2])
+
+    grid = copy.deepcopy(game.players[1].board.state)
+    grid2 = copy.deepcopy(game.players[1].board.state2)
+    grid3 = game.players[1].board.state3
+    grid4 = game.players[1].board.state4
+    base_score, fam_dummy = score_board(grid, grid2, grid3, grid4)
+    
+
+    for piece in options:
+        # print('Piece:', piece)
+        possibles,colors = game.players[1].possible_moves([piece], game);
+        max_pscore = base_score
+        
+        # print(len(possibles))
+        if len(possibles) != 0: # if there is possible moves
+            # print(len(possibles),possibles[m].points,possibles[m].color)
+            # print(game.players[0].board.state,game.players[0].board.state2,game.players[0].board.state3)
+            for m in range(len(possibles)):
+                grid = copy.deepcopy(game.players[1].board.state)
+                grid2 = copy.deepcopy(game.players[1].board.state2)
+                grid3 = game.players[1].board.state3
+                grid4 = game.players[1].board.state4
+                this_color = possibles[m].color
+                
+                # Updating board state locally                
+                # Should make a copy of the state and use the update function instead to allow search
+                for (p0,p1) in possibles[m].points:
+                    grid[p1][p0]=this_color
+                    grid2[p1][p0] = maxval+1
+                
+                this_score, fam_dummy = score_board(grid, grid2, grid3, grid4)
+                if this_score > max_pscore:
+                    max_pscore = this_score
+        
+        p_scores.append(max_pscore)
+        
+    # print(p_scores)
+
+    c = 0
+
+    for piece in options:
+        # print('Piece:', piece)
+        possibles,colors = player.possible_moves([piece], game);
+        # print(len(possibles))
+        if len(possibles) != 0: # if there is possible moves
+            # print(len(possibles),possibles[m].points,possibles[m].color)
+            # print(game.players[0].board.state,game.players[0].board.state2,game.players[0].board.state3)
+            for m in range(len(possibles)):
+                grid = copy.deepcopy(game.players[0].board.state)
+                grid2 = copy.deepcopy(game.players[0].board.state2)
+                grid3 = game.players[0].board.state3
+                grid4 = game.players[0].board.state4
+                this_color = possibles[m].color
+                
+                # Updating board state locally                
+                # Should make a copy of the state and use the update function instead to allow search
+                for (p0,p1) in possibles[m].points:
+                    grid[p1][p0]=this_color
+                    grid2[p1][p0] = maxval+1
+                
+                this_score, fam_dummy = score_board(grid, grid2, grid3, grid4)
+                debug.append(fam_dummy)
+                scores.append(this_score-p_scores[c])
+                all_possibles.append(possibles[m])
+                
+
+            
+
+        else: # no possible move for that piece
+            options.remove(piece); # remove it from the options
+
+        c+=0
+
+    max_score = -1000
+    if len(all_possibles)>0:
+        for a in range(len(all_possibles)):
+            if scores[a]>max_score:
+                max_index = a
+                max_score = scores[a]
+        # print(all_possibles[max_index].id,all_possibles[max_index].color,round(scores[a],0),sorted(debug[a],reverse=True))
+        return all_possibles[max_index],all_possibles[max_index].color
+    else:
+        return None, None; # no possible move left
 
 
 # Human Strategy: choose an available piece and placement based on user input
@@ -581,7 +753,7 @@ def play_blokus(blokus):
         s = 0
         blokus.play()
         for player in blokus.players:
-            s+= player.score
+            s+= player.potential
         
         if old_s == s:
             e+=1
@@ -623,7 +795,12 @@ def multi_run(repeat, one, two):
             all_pieces.append(piece.T1(i));
             all_pieces.append(piece.P0(i));
             all_pieces.append(piece.P1(i));
-            all_pieces.append(piece.NN(i));            
+            all_pieces.append(piece.NN(i));   
+            all_pieces.append(piece.RT1(6,i));
+            all_pieces.append(piece.RT2(6,i));
+            all_pieces.append(piece.RT3(6,i));
+            all_pieces.append(piece.RT4(6,i));
+            all_pieces.append(piece.RT5(6,i));
 
         board = Board(9, 22);
         board1 = Board(9, 22);
@@ -641,16 +818,16 @@ def multi_run(repeat, one, two):
         firstp = P1
         secondp = P2  
         
-        render([firstp.board.state,firstp.board.state2,firstp.board.state3],\
-        [secondp.board.state,secondp.board.state2,secondp.board.state3],blokus.pieces,P2.pieces)  
+        render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
+        [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],blokus.pieces,P2.pieces)  
                 
         blokus.play();
         plist = sorted(blokus.players, key = lambda p: p.id);
         gscores = []
         for player in plist:
             gscores.append(player.score)
-            print("Player "+ str(player.id) + " score "+ str(player.score) + ": "
-                  + str([sh.id for sh in player.pieces]));
+            print("Player "+ str(player.id) + " score "+ str(player.score) + ": ");
+                  # + str([sh.id for sh in player.pieces]));
             for sh in player.pieces:
                 if sh.id in Names:
                     MCounts[Names.index(sh.id)]+=1
@@ -723,8 +900,9 @@ def multi_run(repeat, one, two):
     print("Average Score P1:     " + str(round(np.mean(Scores1),1)))
     print("Average Score P2:     " + str(round(np.mean(Scores2),1)) + "\n")
     
-    print("Missing pieces:     " + str(Names))
-    print("                    " + str(MCounts))
+    # print("Missing pieces:     " + str(Names))
+    # print("                    " + str(MCounts))
+    
     # print("Highest Score:    ", np.amax(Scores))
     # print("Lowest Score:     ", np.amin(Scores), "\n")
 
@@ -739,7 +917,7 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    multi_run(Games, Greedy_Player, Random_Player);
+    multi_run(Games, Greedy_Player_v2, Greedy_Player);
 
 if __name__ == '__main__':
     main();
