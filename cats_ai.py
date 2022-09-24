@@ -3,7 +3,9 @@
 
 '''
 Isle of Cats AI
-This code implements http://abrobecker.free.fr/jeux/index.htm#polyssimochallenge
+This code implements Isle of Cats family game, using the code-base from poly_ai.py. 
+It does not yet handle scoring correctly, and only plays a random move on each turn.
+
 It has been adapted from Blokus code, and contains some hacks that makes it illogical 
 (e.g. referring to all points on the board as 'corners' in the piece placement code)
 
