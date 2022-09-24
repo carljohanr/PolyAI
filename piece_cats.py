@@ -133,7 +133,7 @@ class P1(Piece):
         self.size = 6;
         self.uniques = 8; # number of unique transformations per piece, for AI
         self.color=color
-        self.id = 'T1'+str(self.color);
+        self.id = 'P1'+str(self.color);
         
     def set_points(self, x, y):
         self.points = [(x, y),(x+1,y),(x+2,y),(x,y+1),(x+1,y+1),(x+1,y+2)];

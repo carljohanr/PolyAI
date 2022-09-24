@@ -13,14 +13,17 @@ Senay - GUI Implementation
 # Import the pygame module
 import pygame
 
-Names = ['X','T','Z','W','U','F','P','I','L','N','Y','V','F0','F1','F2','F3','F4','F5','C0','C1','D0','W0','Z0','X0']
+Names = ['X','T','Z','W','U','F','P','I','L','N','Y','V','F0','F1','F2','F3','F4','F5','C0','C1','D0','W0','Z0','X0',\
+         'T0','T1','N0','N1','P0','P1','NN']
 
 Shapes = [[[0,0,0],[0,1,0],[1,1,1],[0,1,0],[0,0,0]],[[0,0,0],[1,1,1],[0,1,0],[0,1,0],[0,0,0]],[[0,0,0],[1,1,0],[0,1,0],[0,1,1],[0,0,0]],[[0,0,0],[1,1,0],[0,1,1],[0,0,1],[0,0,0]],\
           [[0,0,0],[0,0,0],[1,1,1],[1,0,1],[0,0,0]],[[0,0,0],[0,1,1],[1,1,0],[0,1,0],[0,0,0]],[[0,0,0],[1,1,1],[1,1,0],[0,0,0],[0,0,0]],[[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0]],\
           [[0,1,1],[0,1,0],[0,1,0],[0,1,0],[0,0,0]],[[0,1,0],[0,1,0],[0,1,1],[0,0,1],[0,0,0]],[[0,1,0],[0,1,1],[0,1,0],[0,1,0],[0,0,0]],[[0,0,0],[1,1,1],[1,0,0],[1,0,0],[0,0,0]],\
           [[0,1,1],[0,1,0],[0,1,1],[0,1,0],[0,0,0]],[[0,1,1],[1,1,0],[0,1,0],[0,1,0],[0,0,0]],[[0,1,1],[0,1,0],[1,1,0],[0,1,0],[0,0,0]],[[1,0,0],[1,0,0],[1,1,1],[0,1,0],[0,0,0]],\
           [[1,0,0],[1,1,1],[0,1,0],[0,1,0],[0,0,0]],[[1,0,0],[1,1,0],[0,1,1],[0,1,0],[0,0,0]],[[0,1,1],[0,1,0],[0,1,0],[0,1,1],[0,0,0]],[[0,1,1],[0,1,0],[0,1,1],[0,0,1],[0,0,0]],\
-          [[0,1,0],[0,1,1],[0,1,1],[0,1,0],[0,0,0]],[[0,1,1],[0,1,0],[1,1,0],[1,0,0],[0,0,0]],[[1,0,0],[1,1,1],[0,0,1],[0,0,1],[0,0,0]],[[0,1,0],[0,1,1],[1,1,0],[0,1,0],[0,0,0]]]
+          [[0,1,0],[0,1,1],[0,1,1],[0,1,0],[0,0,0]],[[0,1,1],[0,1,0],[1,1,0],[1,0,0],[0,0,0]],[[1,0,0],[1,1,1],[0,0,1],[0,0,1],[0,0,0]],[[0,1,0],[0,1,1],[1,1,0],[0,1,0],[0,0,0]],\
+          [[0,1,0],[1,1,1],[0,1,0],[0,1,0],[0,0,0]],[[1,0,0],[1,1,1],[1,0,0],[1,0,0],[0,0,0]],[[1,1,0],[1,0,0],[1,1,0],[0,1,0],[0,0,0]],[[0,0,0],[1,1,1],[0,1,0],[0,1,1],[0,0,0]],
+          [[0,1,0],[1,1,0],[1,1,0],[1,0,0],[0,0,0]],[[0,0,0],[1,1,1],[1,1,0],[0,1,0],[0,0,0]],[[0,0,0],[0,1,0],[1,1,0],[1,0,0],[0,0,0]],[[0,1,0],[0,1,1],[1,1,0],[0,1,0],[0,0,0]]]
 
 # Initialize pygame
 pygame.init()
@@ -35,7 +38,7 @@ from pygame.locals import (
 
 # Define constants for the screen width and height
 SCREEN_WIDTH = 1120
-SCREEN_HEIGHT = 840
+SCREEN_HEIGHT = 940
 
 # Create the screen object
 # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
@@ -64,7 +67,7 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
     pad = 5
     pads = 1
     size = 40
-    psize = 16
+    psize = 20
     
     xoffset = 120
     
@@ -77,7 +80,7 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
         
         y_adj = 40
         if boards == p2_board:
-            y_adj = 440
+            y_adj = 540
         
         board = boards[0]
         pieces = boards[1]
@@ -86,25 +89,7 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
         hsize = len(board)
         vsize = len(board[0])        
 
-        # for a in range(len(p1_pieces)):
-        #     this_piece = p1_pieces[a].id
-        #     if this_piece in Names:
-        #         y+=4*psize
-        #         x=10
-        #         # print(this_piece)
-        #         this_shape = Shapes[Names.index(this_piece)]
-        #         # print(this_shape)
-        #         for i in range(len(this_shape)):
-        #             y-=3*psize
-        #             for j in range(len(this_shape[i])):
-        #                 #print("The current element is " + str(board[i][j]))
-        #                 if(this_shape[i][j] == 1):
-        #                     pygame.draw.rect(screen,(0, 0, 255), (x, y, psize, psize), 0)     
-        #                 else:
-        #                     pygame.draw.rect(screen,(255, 255, 255), (x, y, psize, psize), 0) 
-                            
-        #                 y += psize
-        #             x += psize
+
     
         # y=0
     
@@ -191,7 +176,34 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
                         
                 x += size
             y += size
-
+            
+            
+    pygame.draw.rect(screen,(255, 255, 255), (0, 420, 1120, 100), 0)     
+    
+    x = 100
+    # print(len(p1_pieces))                    
+    for a in range(len(p1_pieces)):
+        this_piece = p1_pieces[a].id[0:-1]
+        this_color = p1_pieces[a].color
+        if this_piece in Names:
+            # print(this_piece)
+            # print(this_piece)
+            x+=4*psize
+            y=420
+            # print(this_piece)
+            this_shape = Shapes[Names.index(this_piece)]
+            # print(this_shape)
+            for i in range(len(this_shape)):
+                x-=3*psize
+                for j in range(len(this_shape[i])):
+                    #print("The current element is " + str(board[i][j]))
+                    if(this_shape[i][j] == 1):
+                        pygame.draw.rect(screen,color_map[this_color-1], (x, y, psize, psize), 0)     
+                    else:
+                        pygame.draw.rect(screen,(255, 255, 255), (x, y, psize, psize), 0) 
+                        
+                    x += psize
+                y += psize
     
     # Update the display
     pygame.display.flip()

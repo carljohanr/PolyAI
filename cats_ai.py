@@ -21,6 +21,7 @@ import copy
 import operator
 import time
 import numpy as np
+from cats_score import score_board
 
 # cutoff depth for alphabeta minimax search (default 2)
 Depth = 1
@@ -28,7 +29,7 @@ Depth = 1
 MovesToConsider = 4
 # change to adjust the number of games played (defualt 10)
 Games = 1
-TS = 0.1
+TS = 1
 
 Grid = \
     [[0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0],
@@ -304,17 +305,7 @@ class Blokus:
     def play(self):
         
         global Outcomes
-        
-        # t = time.time()
-        
-        # print(time.time()-t)
-        # At the beginning of the game, it should
-        # give the players their pieces and a corner to start.
-        if self.rounds%8 == 0 and self.rounds<40: # set up starting corners and players' initial pieces
-            for i in range(8):    
-                self.pieces.append(self.all_pieces[0])
-                self.all_pieces.pop(0)
-        
+ 
         current = self.players[0]
 
         if self.players[0].id == 1:
@@ -323,6 +314,21 @@ class Blokus:
         else:
             secondp = self.players[0]
             firstp = self.players[1]            
+ 
+        # t = time.time()
+        
+        # Game is played over 5 days, for each day, add 8 pieces to common pool for players to choose between.
+        # Repeat 5 times.
+        if self.rounds%8 == 0 and self.rounds<40: 
+            for i in range(8):    
+                self.pieces.append(self.all_pieces[0])
+                self.all_pieces.pop(0)
+                
+            render([firstp.board.state,firstp.board.state2,firstp.board.state3],\
+                       [secondp.board.state,secondp.board.state2,secondp.board.state3],self.pieces,self.pieces)     
+            # time.sleep(TS)
+        
+       
 
         proposal,color = current.next_move(self); # get the next move based on
                                             # the player's strategy
@@ -347,6 +353,13 @@ class Blokus:
         if self.rounds%8 != 7:
             first = self.players.pop(0);
             self.players += [first];
+        else:
+            for piece in self.pieces:
+                self.all_pieces.append(piece)
+            self.pieces = []
+            self.all_pieces = random.sample(self.all_pieces,len(self.all_pieces))
+                
+                
         self.rounds += 1; # update game round
 
     def make_move(self, move, state):
@@ -449,253 +462,61 @@ def placement_prompt(possibles):
     return placement;    
 
 # Random Strategy: choose an available piece randomly
-# DC
 def Random_Player(player, game):
     options = [p for p in game.pieces];
     while len(options) > 0: # if there are still possible moves
         piece = random.choice(options);
+        # Function returns a piece so does not need to return the color as well (possibles[x].color)
         possibles,colors = player.possible_moves([piece], game);
         if len(possibles) != 0: # if there is possible moves
             m = random.randint(0,len(possibles)-1)
-            print(len(possibles))
             return possibles[m],colors[m]
         else: # no possible move for that piece
             options.remove(piece); # remove it from the options
     return None, None; # no possible move left
 
-# Tyler - AI implementation, created a better opponent to test against
-# Largest Strategy: play a random available move for the largest piece possible
-def Largest_Player(player, game):
-    # pieces are already in order from largest to smallest
-    # iterate through and make the first possible move
-    for p in player.pieces:
-        possibles = player.possible_moves([p], game)
-        # print('#Moves: ' + str(len(possibles)))
-        if len(possibles) != 0: # if there is possible moves
-            return random.choice(possibles);
-    # if no possible moves are found, return None
-    return None
-
-def Greedy_Player_v2(player, game):
-    # pieces are already in order from largest to smallest
-    # iterate through and make the first possible move
-    
-    
-    turn_number = (TotalStartingPieces - len(player.pieces) + 1)
-
-    if turn_number ==3:
-        print ('Game eval start: Turn ' + str(turn_number))
-    if turn_number<3:
-        move = Largest_Player(player,game)
-        return move
-    elif turn_number<5:
-        move = Greedy_Player(player,game)
-        return move        
-    else:
-    
-        all_possibles = []
-        moveeval= []
-        best_index = 0
-        best_value = -1000
-        pcounter = -1
-        
-        maxlen = max(3,turn_number-2)
-        
-        game_copy = copy.deepcopy(game)
-        state = BoardState(game_copy)
-        
-        if player.id == 1:    
-            this_player = state.p1
-            other_player = state.p2
-        else:
-            this_player = state.p2
-            other_player = state.p1
-        
-        temp_possibles1 = player.possible_moves(this_player.pieces, game_copy)
-        temp_possibles2 = player.possible_moves(other_player.pieces, game_copy)
-        
-        temp_set1 = [[t.id,set(t.points)] for t in temp_possibles1]
-        temp_set2 = [[t.id,set(t.points)] for t in temp_possibles2]
-        
-        t_id1 = []
-        t_id2 = []
-        
-        for t in temp_set1:
-            if t[0] not in t_id1:
-                t_id1.append(t[0])
-
-        for t in temp_set2:
-            if t[0] not in t_id2:
-                t_id2.append(t[0])        
-        
-        for p in player.pieces[0:maxlen]:
-            pcounter +=1
-            possibles = player.possible_moves([p], game)
-            all_possibles += possibles
-            temp_counter = 0
-            # print('#Moves: ' + str(len(possibles)))
-            if len(possibles) != 0: # if there is possible moves
-                
-                for m in possibles:
-                    temp_counter +=1
-                    # if temp_counter == 1:
-                    #     print(m.points)                    
-                    # print(this_player.pieces)
-                    # print(p)
-                    # time.sleep(10)
-                    # print(this_player.pieces, p)
-                    # new_pieces = copy.deepcopy(this_player.pieces).pop(pcounter)
-                    
-                    p1set = set()
-                    p2set = set()
-                    
-                    adj_value = 0
-                    t_adj_value1 = 0
-                    t_adj_value2 = 0
-                    
-
-                    
-                    # Nice improvement where available moves are updated iteratively instead of re-generating with every move.
-                    for t in temp_set1:
-                        if t[0] != p.id and len(set(m.points).intersection(t[1]))==0:
-                            p1set = p1set | t[1]
-
-                    for t in temp_set2:
-                        if len(set(m.points).intersection(t[1]))==0:
-                            p2set = p2set | t[1]
-                            
-                    for t0 in t_id1:
-                        tp1set = set()
-                        t1set = set()
-                        for t in temp_set1:
-                            if t[0] != p.id and t[0] != t0 and len(set(m.points).intersection(t[1]))==0:
-                                tp1set = tp1set | t[1]
-                            if t[0] == t0 and t[0] != p.id and len(set(m.points).intersection(t[1]))==0:
-                                t1set = t1set | t[1]
-                                
-                        t_adj_value_temp1 = len(t1set.difference(tp1set))
-                        t_adj_value1 += max(0,t_adj_value_temp1-5)
-                                
-                    for t0 in t_id2:
-                        tp2set = set()
-                        t2set = set()
-                        for t in temp_set2:
-                            if t[0] != t0 and len(set(m.points).intersection(t[1]))==0:
-                                tp2set = tp2set | t[1]
-                            if t[0] == t0 and len(set(m.points).intersection(t[1]))==0:
-                                t2set = t2set | t[1]
-
-                        t_adj_value_temp2 = len(t2set.difference(tp2set))
-                        t_adj_value2 += max(0,t_adj_value_temp2-5)                        
-
-                    p1u = p1set.difference(p2set)
-                    p2u = p2set.difference(p1set)
-                            
-                    # print(len(p1set),len(p2set), len(p1set.difference(p2set)),len(p2set.difference(p1set)))
-                    
-                    # print(t_adj_value1, t_adj_value2)
-                    moveeval.append(len(p1u)-len(p2u)-t_adj_value1+t_adj_value2)
-                    # print(len(temp_possibles1),len(temp_possibles2))
-                    
-
-        if len(all_possibles)>0:
-                
-            for i in range(len(all_possibles)):
-                if moveeval[i]>=best_value:
-                   best_index = i
-                   best_value = moveeval[i]
-                        
-                    # print(best_index)
-                        
-            return all_possibles[best_index]
-                # return random.choice(possibles);
-        # if no possible moves are found, return None
-        return None
-
-
+# Random Strategy: choose an available piece randomly
 def Greedy_Player(player, game):
-    # pieces are already in order from largest to smallest
-    # iterate through and make the first possible move
-    
-    
-    turn_number = (TotalStartingPieces - len(player.pieces) + 1)
-
-    if turn_number ==3:
-        print ('Game eval start: Turn ' + str(turn_number))
-    if turn_number<3:
-        move = Largest_Player(player,game)
-        return move
-    else:
-    
-        all_possibles = []
-        moveeval= []
-        best_index = 0
-        best_value = -1000
-        pcounter = -1
-        
-        maxlen = max(3,turn_number-2)
-        
-        game_copy = copy.deepcopy(game)
-        state = BoardState(game_copy)
-        
-        if player.id == 1:    
-            this_player = state.p1
-            other_player = state.p2
-        else:
-            this_player = state.p2
-            other_player = state.p1
-        
-        temp_possibles1 = player.possible_moves(this_player.pieces, game_copy)
-        temp_possibles2 = player.possible_moves(other_player.pieces, game_copy)
-        
-        temp_set1 = [[t.id,set(t.points)] for t in temp_possibles1]
-        temp_set2 = [[t.id,set(t.points)] for t in temp_possibles2]
-        
-        
-        for p in player.pieces[0:maxlen]:
-            pcounter +=1
-            possibles = player.possible_moves([p], game)
-            all_possibles += possibles
-            temp_counter = 0
-            # print('#Moves: ' + str(len(possibles)))
-            if len(possibles) != 0: # if there is possible moves
+    options = [p for p in game.pieces];
+    scores = []
+    all_possibles = []
+    debug = []
+    maxval = max([max(s) for s in game.players[0].board.state2])
+    for piece in options:
+        # print('Piece:', piece)
+        possibles,colors = player.possible_moves([piece], game);
+        if len(possibles) != 0: # if there is possible moves
+            # print(len(possibles),possibles[m].points,possibles[m].color)
+            # print(game.players[0].board.state,game.players[0].board.state2,game.players[0].board.state3)
+            for m in range(len(possibles)):
+                grid = copy.deepcopy(game.players[0].board.state)
+                grid2 = copy.deepcopy(game.players[0].board.state2)
+                grid3 = game.players[0].board.state3
+                this_color = possibles[m].color
                 
-                for m in possibles:
-
-                    p1set = set()
-                    p2set = set()                 
-                    
-                    # Nice improvement where available moves are updated iteratively instead of re-generating
-                    for t in temp_set1:
-                        if t[0] != p.id and len(set(m.points).intersection(t[1]))==0:
-                            p1set = p1set | t[1]
-
-                    for t in temp_set2:
-                        if len(set(m.points).intersection(t[1]))==0:
-                            p2set = p2set | t[1]
-                     
-                    p1u = p1set.difference(p2set)
-                    p2u = p2set.difference(p1set)
-                            
-                    # print(len(p1set),len(p2set), len(p1set.difference(p2set)),len(p2set.difference(p1set)))
-                    
-                    moveeval.append(len(p1u)-len(p2u))
-                    # print(len(temp_possibles1),len(temp_possibles2))
-                    
-
-        if len(all_possibles)>0:
+                # Should make a copy of the state and use the update function instead
+                for (p0,p1) in possibles[m].points:
+                    grid[p1][p0]=this_color
+                    grid2[p1][p0] = maxval+1
                 
-            for i in range(len(all_possibles)):
-                if moveeval[i]>=best_value:
-                   best_index = i
-                   best_value = moveeval[i]
-                        
-                    # print(best_index)
-                        
-            return all_possibles[best_index]
-                # return random.choice(possibles);
-        # if no possible moves are found, return None
-        return None
+                this_score, fam_dummy = score_board(grid, grid2, grid3)
+                debug.append(fam_dummy)
+                scores.append(this_score)
+                all_possibles.append(possibles[m])
+            
+            max_score = -1000
+            for a in range(len(all_possibles)):
+                if scores[a]>max_score:
+                    max_index = a
+                    max_score = scores[a]
+            
+            print(all_possibles[max_index].id,all_possibles[max_index].color,round(scores[a],0),sorted(debug[a],reverse=True))
+            
+            return all_possibles[max_index],all_possibles[max_index].color
+        else: # no possible move for that piece
+            options.remove(piece); # remove it from the options
+    return None, None; # no possible move left
+
 
 # Human Strategy: choose an available piece and placement based on user input
 def Human_Player(player, game):
@@ -821,7 +642,7 @@ def multi_run(repeat, one, two):
         secondp = P2  
         
         render([firstp.board.state,firstp.board.state2,firstp.board.state3],\
-        [secondp.board.state,secondp.board.state2,secondp.board.state3],P1.pieces,P2.pieces)  
+        [secondp.board.state,secondp.board.state2,secondp.board.state3],blokus.pieces,P2.pieces)  
                 
         blokus.play();
         plist = sorted(blokus.players, key = lambda p: p.id);
@@ -918,7 +739,7 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    multi_run(Games, Random_Player, Random_Player);
+    multi_run(Games, Greedy_Player, Random_Player);
 
 if __name__ == '__main__':
     main();
