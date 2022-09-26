@@ -4,7 +4,7 @@
 '''
 Isle of Cats AI
 This code implements Isle of Cats family game, using the code-base from poly_ai.py. 
-It does not yet handle scoring correctly, and only plays a random move on each turn.
+It implements all rules except lessons, and has a greedy player which is decently competitive.
 
 It has been adapted from Blokus code, and contains some hacks that makes it illogical 
 (e.g. referring to all points on the board as 'corners' in the piece placement code)
@@ -22,13 +22,14 @@ import operator
 import time
 import numpy as np
 from cats_score import score_board
+from cats_score import score_board_0
 
 # cutoff depth for alphabeta minimax search (default 2)
 Depth = 1
 # number of successor states returned (default 4)
 MovesToConsider = 4
 # change to adjust the number of games played (defualt 10)
-Games = 100
+Games = 1
 TS = 0
 
 Grid = \
@@ -272,7 +273,7 @@ class Player:
                                 visited.append(set(candidate.points));
                                     
         # print(t_counter)
-        return placements,colors;
+        return placements;
 
     def plausible_moves(self, pieces, game, cutoff, pid):
         placements = []
@@ -357,12 +358,16 @@ class Blokus:
         
        
 
-        proposal,color = current.next_move(self); # get the next move based on
+        proposal = current.next_move(self); # get the next move based on
                                             # the player's strategy
+
+        # print(proposal)
+
 
         # print(time.time()-t)
 
         if proposal is not None: # if there a possible proposed move
+            color = proposal.color
             # check if the move is valid
             if self.valid_move(current, proposal.points):
                 # update the board and the player status
@@ -380,12 +385,13 @@ class Blokus:
 
         if current.board.treasure > 0: # If the player obtained a treasure, give him a chance to place it.
             
-            proposal,color = current.next_move(self); # get the next move based on
+            proposal = current.next_move(self); # get the next move based on
                                             # the player's strategy
 
             # print(time.time()-t)
     
             if proposal is not None: # if there a possible proposed move
+                color = proposal.color
                 # check if the move is valid
                 if self.valid_move(current, proposal.points):
                     # update the board and the player status
@@ -405,7 +411,9 @@ class Blokus:
             # put the current player to the back of the queue
            
         current.board.treasure = 0
-            
+          
+        # Round logic is slightly flawed. Game continues as long as both players have not passed.
+        # One player can play more than four turns in a row if the other player passes.
 
         if self.rounds%8 != 7:
             first = self.players.pop(0);
@@ -416,8 +424,6 @@ class Blokus:
             self.pieces = []
             self.all_pieces = random.sample(self.all_pieces,len(self.all_pieces))
         
-
-            
                 
         self.rounds += 1; # update game round
 
@@ -459,38 +465,21 @@ def piece_prompt(options):
     # Prompt the user for their choice
     print("\nIt's your turn! Select one of the following options:");
     choice = 0;
+    print (option_names)
     
-    # While they haven't chosen a valid piece...
-    while (choice != 2):
-        print("     1 - See available pieces.");
-        print("     2 - Choose a piece.");
-
-        # Get their choice. If they don't enter an integer, handle the exception
-        try:
-            choice = int(input("Choice: "));
-        except:
-            # Do nothing; choice = 0, so the user will be prompted again
-            pass;
-
-        # Once they've entered a choice, perform the desired actions
-        print("");
-        if (choice == 1): # Print the available pieces
-            for x in option_names:
-                print(x);
-            print("\nSelect one of the following options:");
-
-        elif (choice == 2): # Request the user's piece
-            piece = input("Choose a piece: ");
-            print("");
-            if piece in option_names:  # If the piece name is valid, retrieve the piece object
-                i = option_names.index(piece);
-                piece = options[i];
-            else:
-                print("INVALID PIECE. Please try again:");
-                choice = 0;
-
-        else: # If the user doesn't request the list of pieces or choose a piece
-            print("INVALID CHOICE. Please try again:");
+    piece = input("Choose a piece: ");
+    print("");
+    try: 
+        i = int(piece)
+        piece = options[i-1]
+    except:
+        if piece in option_names:  # If the piece name is valid, retrieve the piece object
+            i = option_names.index(piece);
+            piece = options[i];
+        else:
+            print("INVALID PIECE. Please try again:");
+            choice = 0;
+    
 
     # Once they've chosen a piece...
     return piece;
@@ -499,18 +488,33 @@ def piece_prompt(options):
 def placement_prompt(possibles):
     choice = -1; # An invalid "choice" to start the following loop
 
+    exclude_list=[]
+
     # While the user hasn't chosen a valid placment...
     while (choice < 1 or choice > len(possibles)):
+        # print(exclude_list)
         count = 1; # Used to index each placement; initialized to 1
         # Prompt the user for their placement
         print("Select one of the following placements:")
         for x in possibles:
-            print("     " + str(count) + " - " + str(x.points));
+            if x not in exclude_list:
+                # print(x)
+                print("     " + str(count) + " - " + str(x.points));
             count += 1;
 
         # See if the user enters an integer; if they don't, handle the exception
         try:
-            choice = int(input("Choose a placement: "));
+            this_input = input("Choose a placement: ")
+            # print(this_input,'-' in this_input)
+            if '-' in this_input:
+                x,y = this_input.split('-')
+                this_point = (int(x)-1,int(y)-1)
+                # print('P: ', this_point)
+                for p in possibles:
+                    if this_point not in p.points:
+                        exclude_list.append(p)
+            else:
+                choice = int(this_input);
         except:
             # Do nothing; if the user doesn't enter an integer, they will be prompted again
             pass;
@@ -535,7 +539,7 @@ def Random_Player(player, game, oval = 1):
             return possibles[m],colors[m]
         else: # no possible move for that piece
             options.remove(piece); # remove it from the options
-    return None, None; # no possible move left
+    return None; # no possible move left
 
 # Greedy Strategy: choose an available piece randomly based on own board only
 def Greedy_Player(player, game, oval = 1):
@@ -544,6 +548,109 @@ def Greedy_Player(player, game, oval = 1):
     else:
         options = [p for p in game.treasures]
         # print(options)
+    scores = []
+    all_possibles = []
+    debug = []
+    maxval = max([max(s) for s in game.players[0].board.state2])
+    for piece in options:
+        # print('Piece:', piece)
+        possibles = player.possible_moves([piece], game);
+        # print(len(possibles))
+        if len(possibles) != 0: # if there is possible moves
+            # print(len(possibles),possibles[m].points,possibles[m].color)
+            # print(game.players[0].board.state,game.players[0].board.state2,game.players[0].board.state3)
+            for m in range(len(possibles)):
+                grid = copy.deepcopy(game.players[0].board.state)
+                grid2 = copy.deepcopy(game.players[0].board.state2)
+                grid3 = game.players[0].board.state3
+                grid4 = game.players[0].board.state4
+                this_color = possibles[m].color
+                
+                # Should make a copy of the state and use the update function instead
+                for (p0,p1) in possibles[m].points:
+                    grid[p1][p0]=this_color
+                    grid2[p1][p0] = maxval+1
+                
+                this_score, fam_dummy = score_board(grid, grid2, grid3, grid4)
+                # debug.append(fam_dummy)
+                scores.append(this_score)
+                all_possibles.append(possibles[m])
+            
+
+        else: # no possible move for that piece
+            options.remove(piece); # remove it from the options
+
+    max_score = -1000
+    if len(all_possibles)>0:
+        for a in range(len(all_possibles)):
+            if scores[a]>max_score:
+                max_index = a
+                max_score = scores[a]
+        # print(all_possibles[max_index].id,all_possibles[max_index].color,round(scores[a],0),sorted(debug[a],reverse=True))
+        return all_possibles[max_index]
+    else:
+        return None; # no possible move left
+
+
+# Greedy Strategy: choose an available piece randomly based on own board only
+def Greedy_Player_v0(player, game, oval = 1):
+    if oval == 1:
+        options = [p for p in game.pieces];
+    else:
+        options = [p for p in game.treasures]
+        # print(options)
+    scores = []
+    all_possibles = []
+    debug = []
+    maxval = max([max(s) for s in game.players[0].board.state2])
+    for piece in options:
+        # print('Piece:', piece)
+        possibles = player.possible_moves([piece], game);
+        # print(len(possibles))
+        if len(possibles) != 0: # if there is possible moves
+            # print(len(possibles),possibles[m].points,possibles[m].color)
+            # print(game.players[0].board.state,game.players[0].board.state2,game.players[0].board.state3)
+            for m in range(len(possibles)):
+                grid = copy.deepcopy(game.players[0].board.state)
+                grid2 = copy.deepcopy(game.players[0].board.state2)
+                grid3 = game.players[0].board.state3
+                grid4 = game.players[0].board.state4
+                this_color = possibles[m].color
+                
+                # Should make a copy of the state and use the update function instead
+                for (p0,p1) in possibles[m].points:
+                    grid[p1][p0]=this_color
+                    grid2[p1][p0] = maxval+1
+                
+                this_score, fam_dummy = score_board_0(grid, grid2, grid3, grid4)
+                # debug.append(fam_dummy)
+                scores.append(this_score)
+                all_possibles.append(possibles[m])
+            
+
+        else: # no possible move for that piece
+            options.remove(piece); # remove it from the options
+
+    max_score = -1000
+    if len(all_possibles)>0:
+        for a in range(len(all_possibles)):
+            if scores[a]>max_score:
+                max_index = a
+                max_score = scores[a]
+        # print(all_possibles[max_index].id,all_possibles[max_index].color,round(scores[a],0),sorted(debug[a],reverse=True))
+        return all_possibles[max_index]
+    else:
+        return None; # no possible move left
+
+
+# Greedy Strategy: Converge the estimated potential to the actual score as the game progresses. No significant improvement.
+def Greedy_Player_v3(player, game, oval = 1):
+    if oval == 1:
+        options = [p for p in game.pieces];
+    else:
+        options = [p for p in game.treasures]
+        # print(options)
+    progress = min(1,int(game.rounds/2)/20)
     scores = []
     all_possibles = []
     debug = []
@@ -567,9 +674,9 @@ def Greedy_Player(player, game, oval = 1):
                     grid[p1][p0]=this_color
                     grid2[p1][p0] = maxval+1
                 
-                this_score, fam_dummy = score_board(grid, grid2, grid3, grid4)
-                debug.append(fam_dummy)
-                scores.append(this_score)
+                this_score, this_potential = score_board(grid, grid2, grid3, grid4, 0)
+                # debug.append(fam_dummy)
+                scores.append((1-progress)*this_potential+progress*this_score)
                 all_possibles.append(possibles[m])
             
 
@@ -583,11 +690,9 @@ def Greedy_Player(player, game, oval = 1):
                 max_index = a
                 max_score = scores[a]
         # print(all_possibles[max_index].id,all_possibles[max_index].color,round(scores[a],0),sorted(debug[a],reverse=True))
-        return all_possibles[max_index],all_possibles[max_index].color
+        return all_possibles[max_index]
     else:
-        return None, None; # no possible move left
-
-
+        return None; # no possible move left
 
 # Greedy Strategy: choose an available piece randomly based on own board only
 def Greedy_Player_v2(player, game, oval = 1):
@@ -595,8 +700,8 @@ def Greedy_Player_v2(player, game, oval = 1):
         options = [p for p in game.pieces];
     else:
         # Opponent scores don't matter for treasures as they won't be available to the other player
-        move, color = Greedy_Player(player, game, oval)
-        return move, color
+        move = Greedy_Player(player, game, oval)
+        return move
         
         # options = [p for p in game.treasures]
         # print(options)
@@ -612,7 +717,7 @@ def Greedy_Player_v2(player, game, oval = 1):
     grid4 = game.players[1].board.state4
     base_score, fam_dummy = score_board(grid, grid2, grid3, grid4)
     
-
+    # Estimate opportunity score for the current player for selected piece. Small or no improvement.
     for piece in options:
         # print('Piece:', piece)
         possibles,colors = game.players[1].possible_moves([piece], game);
@@ -685,14 +790,18 @@ def Greedy_Player_v2(player, game, oval = 1):
                 max_index = a
                 max_score = scores[a]
         # print(all_possibles[max_index].id,all_possibles[max_index].color,round(scores[a],0),sorted(debug[a],reverse=True))
-        return all_possibles[max_index],all_possibles[max_index].color
+        return all_possibles[max_index]
     else:
-        return None, None; # no possible move left
+        return None; # no possible move left
 
 
 # Human Strategy: choose an available piece and placement based on user input
-def Human_Player(player, game):
-    options = [p for p in player.pieces];
+def Human_Player(player, game, oval = 1):
+    if oval == 1:
+        options = [p for p in game.pieces];
+    else:
+        options = [p for p in game.treasures]
+        # print(options)
     while len(options) > 0: # if there are still possible moves
         piece = piece_prompt(options);
         possibles = player.possible_moves([piece], game);
@@ -704,26 +813,16 @@ def Human_Player(player, game):
 
 
 # Human Strategy: choose an available piece and placement based on user input
-def Human_Player_Fast(player, game):
-    turn_number = (TotalStartingPieces - len(player.pieces) + 1)
-    if turn_number<6:
-        move = Largest_Player(player,game)
+def Human_Player_Fast(player, game, oval = 1):
+    # turn_number = (TotalStartingPieces - len(player.pieces) + 1)
+    if game.rounds<2:
+        move = Greedy_Player(player,game,oval)
         return move
 
     else:
 
-        
-        # Fix this so pieces that cannot be placed don't show up among the options
-        options = [p for p in player.pieces];
-        while len(options) > 0: # if there are still possible moves
-            piece = piece_prompt(options);
-            possibles = player.possible_moves([piece], game);
-            if len(possibles) != 0: # if there is possible moves
-                return placement_prompt(possibles);
-            else: # no possible move for that piece
-                options.remove(piece); # remove it from the options
-        return None; # no possible move left
-
+        move = Human_Player(player,game,oval)
+        return move
 
 # Board state is no longer used
 class BoardState:
@@ -917,7 +1016,7 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    multi_run(Games, Greedy_Player_v2, Greedy_Player);
+    multi_run(Games, Human_Player, Greedy_Player);
 
 if __name__ == '__main__':
     main();

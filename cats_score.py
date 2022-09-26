@@ -25,8 +25,6 @@ import copy
 
 four_directions = [[0,1],[0,-1],[1,0],[-1,0]]
 
-adj = 0.2
-
 def explore(grid, x, y, visited, groups,n):
     groups[-1].append((x, y))
     visited.add((x, y))
@@ -50,6 +48,8 @@ def connected_cells(grid, visited, groups, n):
     return groups
 
 def score_board(grid,grid2,grid3,grid4,option = 1):
+    
+    adj = 0.1
     
     famscore = [0,0,0,8,11,15,20,25,30,35,40,45,50,55,60]
     fampotential = [0,2,6,10,15,20,25,30,35,40,45,50,55,60,65]
@@ -85,7 +85,7 @@ def score_board(grid,grid2,grid3,grid4,option = 1):
             if grid4[i][j] > 1 and grid[i][j]==grid4[i][j]-1:
                 treasures+=1
             elif grid[i][j] > 1 and grid4[i][j] > 1 and grid[i][j]!=grid4[i][j]-1:
-                treasures-=1
+                treasures-=0
                 
     rleft = [r1-r2 for (r1,r2) in zip(roomsizes,roomfilled)]
                 
@@ -125,4 +125,81 @@ def score_board(grid,grid2,grid3,grid4,option = 1):
     else:
         return this_score, this_potential
 
+def score_board_0(grid,grid2,grid3,grid4,option = 1):
+    
+    adj = 0
+    
+    famscore = [0,0,0,8,11,15,20,25,30,35,40,45,50,55,60]
+    fampotential = [0,2,6,10,15,20,25,30,35,40,45,50,55,60,65]
+    roomfilled = [0,0,0,0,0,0,0]
+    roomsizes = [60, 18, 11, 11, 18, 20, 4]
+    hall = []
+    
+    this_score = 0 
+    this_potential = 0
+    rats = 0
+    treasures = 0
+    
+
+    for i in range(1,6):
+       groups = list()
+       visited = set()
+       ifams = connected_cells(grid, visited, groups, i)
+       hsizes = sorted([len(hole) for hole in ifams], reverse = True)
+       # print(hsizes)
+       if len(ifams)>0:
+           hpotential = [fampotential[int((len(ifam)+1)/5)] for ifam in ifams[0:2]]
+           hscores = [famscore[int((len(ifam)+1)/5)] for ifam in ifams]
+           hall += hscores
+           this_potential += sum(hpotential)   
+           this_score += sum(hscores)
+ 
+    for i in range(len(grid)):
+        for j in range(len(grid[0])):
+            if grid3[i][j]>0 and grid[i][j]>1:
+                roomfilled[grid3[i][j]-1] += 1
+            if grid4[i][j] == 1 and grid[i][j]>1:
+                rats+=1
+            if grid4[i][j] > 1 and grid[i][j]==grid4[i][j]-1:
+                treasures+=1
+            elif grid[i][j] > 1 and grid4[i][j] > 1 and grid[i][j]!=grid4[i][j]-1:
+                treasures-=0
+                
+    rleft = [r1-r2 for (r1,r2) in zip(roomsizes,roomfilled)]
+                
+    for r in rleft:
+        this_potential += 5*1/(r+1)
+        if r == 0:
+            this_score += 5
+        
+    this_potential += 2*treasures
+    this_potential += 0.5*rats
+    
+    this_score += rats
+      
+    # print('Grid + score:')
+    # print(grid)
+    # print(grid4)
+    # print(roomfilled) 
+
+    for  i in range(len(grid)):
+        for j in range(len(grid[0])):
+            if grid[i][j]>0:
+                grid[i][j]=1
+
+    for  i in range(len(grid)-1):
+        for j in range(len(grid[0])):
+            if min(grid3[i][j],grid3[i+1][j])>0:
+                this_potential-=adj*abs(grid[i][j]-grid[i+1][j])
+
+    for  i in range(len(grid)):
+        for j in range(len(grid[0])-1):
+            if min(grid3[i][j],grid3[i][j+1])>0:
+                this_potential-=adj*abs(grid[i][j]-grid[i][j+1])
+
+
+    if option == 1:
+        return this_potential, hall
+    else:
+        return this_score, this_potential
 
