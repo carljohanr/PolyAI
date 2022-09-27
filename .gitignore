@@ -1,1 +1,7 @@
 *.png
+cats_ai_backup.py
+__pycache__/cats_score.cpython-38.pyc
+__pycache__/cats_score.cpython-38.pyc
+__pycache__/gui_cats.cpython-38.pyc
+__pycache__/piece_cats.cpython-38.pyc
+*.pyc

@@ -54,7 +54,13 @@ def score_board(grid,grid2,grid3,grid4,option = 1):
     famscore = [0,0,0,8,11,15,20,25,30,35,40,45,50,55,60]
     fampotential = [0,2,6,10,15,20,25,30,35,40,45,50,55,60,65]
     roomfilled = [0,0,0,0,0,0,0]
-    roomsizes = [60, 18, 11, 11, 18, 20, 4]
+    
+    # Hack to detect the board
+    
+    if grid3[4][21]>0:
+        roomsizes = [60, 18, 11, 11, 18, 20, 4]
+    else:
+        roomsizes = [60,15,10,10,19,23,9]
     hall = []
     
     this_score = 0 
@@ -125,14 +131,22 @@ def score_board(grid,grid2,grid3,grid4,option = 1):
     else:
         return this_score, this_potential
 
-def score_board_0(grid,grid2,grid3,grid4,option = 1):
+
+
+def score_board_v2(grid,grid2,grid3,grid4,option = 1):
     
-    adj = 0
+    adj = 0.1
     
     famscore = [0,0,0,8,11,15,20,25,30,35,40,45,50,55,60]
     fampotential = [0,2,6,10,15,20,25,30,35,40,45,50,55,60,65]
     roomfilled = [0,0,0,0,0,0,0]
-    roomsizes = [60, 18, 11, 11, 18, 20, 4]
+    
+    # Hack to detect the board
+    
+    if grid3[4][21]>0:
+        roomsizes = [60, 18, 11, 11, 18, 20, 4]
+    else:
+        roomsizes = [60,15,10,10,19,23,9]
     hall = []
     
     this_score = 0 
@@ -202,4 +216,3 @@ def score_board_0(grid,grid2,grid3,grid4,option = 1):
         return this_potential, hall
     else:
         return this_score, this_potential
-

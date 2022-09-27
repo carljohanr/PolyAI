@@ -22,7 +22,9 @@ import operator
 import time
 import numpy as np
 from cats_score import score_board
-from cats_score import score_board_0
+import cats_score
+# from cats_score import score_board_0
+import grids
 
 # cutoff depth for alphabeta minimax search (default 2)
 Depth = 1
@@ -32,48 +34,7 @@ MovesToConsider = 4
 Games = 1
 TS = 0
 
-Grid = \
-    [[0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0],
-    [0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
-    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
-    [0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
-    [0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0]]
 
-Grid2 = [[0,0,0,0,0,0,0,3,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,1,1,0,0,0,0,0],
-    [0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [1,2,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0],
-    [0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0],
-    [0,0,0,0,0,0,0,0,0,6,0,1,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0]]
-    
-Grid3 = \
-    [[0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0],
-    [0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
-    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
-    [0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
-    [0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0]]
-
-Grid4 = [\
-    [0,0,0,0,0,0,0,3,3,3,3,1,1,1,1,0,0,0,0,0,0,0],
-    [0,0,0,0,3,3,3,3,3,3,3,1,1,1,1,1,6,0,0,0,0,0],
-    [0,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,6,6,6,0,0,0],
-    [2,2,2,2,1,5,5,5,5,5,5,1,1,1,1,1,6,6,6,6,7,0],
-    [2,2,2,2,1,5,5,5,5,5,5,1,1,1,1,1,6,6,6,6,7,7],
-    [2,2,2,2,1,5,5,5,5,5,5,1,1,1,1,1,6,6,6,6,7,0],
-    [0,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,6,6,6,0,0,0],
-    [0,0,0,0,4,4,4,4,4,4,4,1,1,1,1,1,6,0,0,0,0,0],
-    [0,0,0,0,0,0,0,4,4,4,4,1,1,1,1,0,0,0,0,0,0,0]]
 
 # taken from mancala.py, used for alphabeta search
 count = 0
@@ -117,18 +78,29 @@ OpponentUseless = UselessInit
 # Blokus Board
 # DC-Claire
 class Board:
-    def __init__(self, nrow, ncol):
+    def __init__(self, nrow, ncol, bcount):
         self.nrow = nrow; # total rows
         self.ncol = ncol; # total columns
 
         self.state = [[0] * ncol for i in range(nrow)];
         self.state2 = [[0] * ncol for i in range(nrow)];
-        self.state3 = copy.deepcopy(Grid4); # Rooms on the board, also signifies valid placements
-        self.state4 = copy.deepcopy(Grid2); # Resources on the board
+        self.state3 = copy.deepcopy(grids.Grids4[bcount]); # Rooms on the board, also signifies valid placements
+        self.state4 = copy.deepcopy(grids.Grids2[bcount]); # Resources on the board
         self.adj_state = [[0] * ncol for i in range(nrow)];
         self.treasure = 0
+        self.families = []
+        self.holes = []
+        
+        self.visited = set()
+        
+        for row in range(self.nrow):
+            for col in range(self.ncol):
+                if self.state3[row][col]==0:
+                    self.visited.add((row,col))
         
     def update(self, player_id, placement,color):
+        
+        pset = set(placement)
         
         #print(self.state)
         #print(self.state2)
@@ -140,6 +112,85 @@ class Board:
                     self.state2[row][col] = maxval+1
                     if self.state4[row][col]-1 == color:
                         self.treasure = 1
+                  
+        merge_fams = []
+                  
+        # Fast way to update board state and groups, to be used by scoring/search routines     
+        # Should make more readable by creating a separate class for families (?)
+        if len(self.families) == 0:
+            self.families.append([1,color,pset,self.adj_xy(placement)])
+        else:
+            temp_counter = 0
+            remove_f = []
+            for f in self.families:
+                # print('Current family: ', color,f[1],pset,f[3])
+                if color==f[1] and len(pset.intersection(f[3]))>0:
+                    remove_f.append(temp_counter)
+                    merge_fams.append(f)
+
+                temp_counter += 1
+                
+            # print(player_id,remove_f)
+                
+            for i in remove_f[::-1]:
+                self.families.pop(i)
+            
+            merged_fam = [1,color,pset,self.adj_xy(placement)]
+            # print('To merge: ',len(merge_fams))
+            for f in merge_fams:
+                merged_fam[0] += f[0]
+                merged_fam[2] = merged_fam[2].union(f[2])
+                merged_fam[3] = merged_fam[3].union(f[3])
+            
+            self.families.append(merged_fam)
+            
+            for f in self.families:
+                f[3] = f[3].difference(pset)
+                
+            # print('Adjacent: ', [f[3] for f in self.families])
+                
+
+            # Mixing up rows and columns - need better convetions 
+            # Old functions are returning [row,col] but here I mostly use [col,row]
+            # Column first is common (e.g. go,chess but maybe makes code harder to read)
+            groups = list()
+            visited = copy.deepcopy(self.visited)
+
+            self.holes = []
+            holes2 = cats_score.connected_cells(self.state, visited, groups, 0)
+            for hole2 in holes2:
+                hole = [(y,x) for (x,y) in hole2]
+                self.holes.append(hole)
+            
+            # print(len(holes),holes[0])
+            
+            family_exps = []
+            family_exp_counts = []
+        
+            for f in self.families:
+                family_exp = []
+                family_exp_count = 0
+                for h in self.holes:
+                    # print('Hole and family:', h, f[3])
+                    if len(f[3].intersection(h))>0:
+                        family_exp.append(len(h))
+                        family_exp_count += self.reduce_family(len(h))
+                family_exps.append(family_exp)
+                family_exp_count = min(family_exp_count,2)
+                family_exp_counts.append(family_exp_count)
+                
+            print(player_id,family_exp_counts)
+        
+        # print(len(self.families),[[f[0],f[1]] for f in self.families])
+
+    def reduce_family(self,size):
+        if size<5:
+            return 0
+        if size<9:
+            return 1
+        else: 
+            return 2
+        
 
     # Check if the point (y, x) is within the board's bound
     def in_bounds(self, point):
@@ -168,6 +219,21 @@ class Board:
                 adjacents += [self.state[y + 1][x] > 0];
 
         return True in adjacents;
+
+    def adj_xy(self, placement):
+        adj_set = set();
+        # Check left, right, up, down for adjacent square
+        for x, y in placement:
+            if self.in_bounds((x + 1, y)) and self.state[y][x+1]==0:
+                adj_set.add((x+1,y))
+            if self.in_bounds((x - 1, y)) and self.state[y][x-1]==0:
+                adj_set.add((x-1,y))
+            if self.in_bounds((x , y+1)) and self.state[y+1][x]==0:
+                adj_set.add((x,y+1))
+            if self.in_bounds((x , y-1)) and self.state[y-1][x]==0:
+                adj_set.add((x,y-1))
+
+        return adj_set
 
     # Check if a piece placement is cornering
     # any pieces of the player proposing the move.
@@ -219,7 +285,7 @@ class Player:
         
         self.score, self.potential = score_board(grid, grid2, grid3, grid4, 2)
         # Score for rooms and rats are counted as negatives
-        self.score -= 54
+        self.score -= 53 # Adjust for board with just 18 rats
         
         
         for c in piece.corners:
@@ -353,7 +419,7 @@ class Blokus:
                 self.all_pieces.pop(0)
                 
             render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
-                       [secondp.board.state,secondp.board.state2,secondp.board.state3,firstp.board.state4],self.pieces,self.pieces)     
+                       [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],self.pieces+self.treasures,self.pieces)     
             # time.sleep(TS)
         
        
@@ -376,7 +442,7 @@ class Blokus:
                 current.update_player(proposal, self.board);
                 self.remove_piece(proposal); # remove used piece
                 render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
-                       [secondp.board.state,secondp.board.state2,secondp.board.state3,firstp.board.state4],self.pieces,self.pieces)                     
+                       [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],self.pieces+self.treasures,self.pieces)                     
                 # print(time.time()-t)
 
             else: # end the game if an invalid move is proposed
@@ -403,7 +469,7 @@ class Blokus:
                         
                     # self.remove_piece(proposal); # remove used piece
                     render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
-                           [secondp.board.state,secondp.board.state2,secondp.board.state3,firstp.board.state4],self.pieces,self.pieces)                     
+                           [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],self.pieces,self.pieces)                     
                     # print(time.time()-t)
     
                 else: # end the game if an invalid move is proposed
@@ -511,8 +577,15 @@ def placement_prompt(possibles):
                 this_point = (int(x)-1,int(y)-1)
                 # print('P: ', this_point)
                 for p in possibles:
-                    if this_point not in p.points:
+                    if this_point not in p.points and p not in exclude_list:
                         exclude_list.append(p)
+                if len(possibles)-len(exclude_list) == 1:
+                    for z in range(len(possibles)):
+                        if possibles[z] not in exclude_list:
+                            choice = z+1
+                elif len(possibles)-len(exclude_list) == 0:
+                    exclude_list = []
+                
             else:
                 choice = int(this_input);
         except:
@@ -720,7 +793,7 @@ def Greedy_Player_v2(player, game, oval = 1):
     # Estimate opportunity score for the current player for selected piece. Small or no improvement.
     for piece in options:
         # print('Piece:', piece)
-        possibles,colors = game.players[1].possible_moves([piece], game);
+        possibles = game.players[1].possible_moves([piece], game);
         max_pscore = base_score
         
         # print(len(possibles))
@@ -752,7 +825,7 @@ def Greedy_Player_v2(player, game, oval = 1):
 
     for piece in options:
         # print('Piece:', piece)
-        possibles,colors = player.possible_moves([piece], game);
+        possibles = player.possible_moves([piece], game);
         # print(len(possibles))
         if len(possibles) != 0: # if there is possible moves
             # print(len(possibles),possibles[m].points,possibles[m].color)
@@ -901,15 +974,25 @@ def multi_run(repeat, one, two):
             all_pieces.append(piece.RT4(6,i));
             all_pieces.append(piece.RT5(6,i));
 
-        board = Board(9, 22);
-        board1 = Board(9, 22);
-        board2 = Board(9, 22);
+        board = Board(9, 22, 0 );
+        board1 = Board(9, 22,1);
+        board2 = Board(9, 22, 0);
 
         P1 = Player(1, board1, one) # first player
         P2 = Player(2, board2, two) # second player
 
         order = [P1, P2];
         blokus = Blokus(order, board, all_pieces);
+        
+        firstp = P1
+        secondp = P2  
+        
+        # Start of game display
+        # Need to clear board before rendering
+        render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
+        [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],blokus.pieces+blokus.treasures,P2.pieces)          
+        
+        
         play_blokus(blokus);
 
         # End of game display.
@@ -1016,7 +1099,7 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    multi_run(Games, Human_Player, Greedy_Player);
+    multi_run(Games, Greedy_Player, Greedy_Player);
 
 if __name__ == '__main__':
     main();
