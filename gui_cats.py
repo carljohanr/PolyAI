@@ -38,8 +38,8 @@ from pygame.locals import (
 )
 
 # Define constants for the screen width and height
-SCREEN_WIDTH = 1120
-SCREEN_HEIGHT = 940
+SCREEN_WIDTH = 1140
+SCREEN_HEIGHT = 1120
 
 # Create the screen object
 # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
@@ -66,22 +66,28 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
     
     x,y = 0,0
     pad = 5
-    pads = 1
-    size = 40
-    psize = 20
+    pads = 0
+    size = 50
+    psize = 25
     
-    xoffset = 120
+    bsize = 10
+    bpad = (size-bsize)/2
+    
+    xoffset = 20
     
     # pygame.draw.rect(screen,(255, 255, 255), (0, 0, 100, 660), 0)
     # pygame.draw.rect(screen,(255, 255, 255), (860, 0, 960, 660), 0)
 
-    
+    x_adj = 20
+
+    temp_counter = 0
 
     for boards in [p1_board,p2_board]:
         
-        y_adj = 40
-        if boards == p2_board:
-            y_adj = 540
+        
+        y_adj = 20
+        if temp_counter >0:
+            y_adj = 640
         
         board = boards[0]
         pieces = boards[1]
@@ -115,11 +121,13 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
         #                 y += psize
         #             x += psize
     
-        for i in range(0, size*len(board[0])+1, size):
-            pygame.draw.line(screen, (200,200,200), (i+xoffset-1, y_adj-1), (i+xoffset-1, y_adj+size*hsize-1), 2)
-        for i in range(0, size*len(board)+1, size):        
-            pygame.draw.line(screen, (200,200,200), (xoffset-1, y_adj+i-1), (xoffset+size*vsize-1, y_adj+i-1), 2)
-      
+        # for i in range(0, size*len(board[0])+1, size):
+        #     pygame.draw.line(screen, (200,200,200), (i+xoffset-1, y_adj-1), (i+xoffset-1, y_adj+size*hsize-1), 2)
+        # for i in range(0, size*len(board)+1, size):        
+        #     pygame.draw.line(screen, (200,200,200), (xoffset-1, y_adj+i-1), (xoffset+size*vsize-1, y_adj+i-1), 2)
+
+
+
  
         color_map = [(0,0,255),(0,255,0),(255,0,0),(255,255,255)]
         color_map = [(126, 67, 177),(26, 148, 208),(83, 198, 56),(239, 130, 40),(222, 68, 57),(155,103,60)]
@@ -128,7 +136,7 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
         
         y = y_adj
         for i in range(len(board)):   
-            x = 120
+            x = x_adj
             for j in range(len(board[i])):
                 this_loc = board[i][j]
                 this_item = items[i][j]
@@ -150,13 +158,13 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
                         this_color = white
                     else:
                         this_color = color_map[this_item-2]
-                    pygame.draw.rect(screen,this_color, (x+3*pad, y+3*pad, size-6*pad, size-6*pad), 0)
+                    pygame.draw.rect(screen,this_color, (x+bpad, y+bpad, size-2*bpad, size-2*bpad), 0)
                 elif this_item in [1]:
                     if this_loc>0:
                         this_color = (120,120,120)
                     else:
                         this_color = black
-                    pygame.draw.rect(screen,this_color, (x+3*pad, y+3*pad, size-6*pad, size-6*pad), 0)
+                    pygame.draw.rect(screen,this_color, (x+bpad, y+bpad, size-2*bpad, size-2*bpad), 0)
                 else:
                     # pygame.draw.rect(screen, (255,255,255), (x+pad, y+pad, size-2*pad, size-2*pad), 0)   
                     useless = 0
@@ -165,7 +173,7 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
         
         y = y_adj
         for i in range(len(board)):   
-            x = 120
+            x = x_adj
             for j in range(len(board[i])):
                 this_loc = board[i][j]
                 #print("The current element is " + str(board[i][j]))
@@ -183,7 +191,7 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
     
         y = y_adj
         for i in range(len(board)):   
-            x = 120
+            x = x_adj
             for j in range(len(board[i])):
                 this_loc = board[i][j]
                 #print("The current element is " + str(board[i][j]))
@@ -196,9 +204,30 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
             y += size
             
             
-    pygame.draw.rect(screen,(255, 255, 255), (0, 420, 1120, 100), 0)     
+        tc = 0
+        for i in range(0, size*len(board[0])+1, size):
+            for j in range(len(board)):
+                if (tc==0 and rooms[j][tc]>0) or (tc==len(board[0]) and rooms[j][tc-1]>0) or (tc>0 and tc<len(board[0]) and rooms[j][tc-1]!=rooms[j][tc]):
+                    pygame.draw.line(screen, (0,0,0), (i+xoffset-1, y_adj+j*size-1), (i+xoffset-1, y_adj+(j+1)*size-1), 2)   
+            tc+=1
+           
+        tc=0
+        for i in range(0, size*len(board)+1, size):
+            for j in range(len(board[0])):
+                if (tc==0 and rooms[tc][j]>0) or (tc==len(board) and rooms[tc-1][j]>0) or (tc>0 and tc<len(board) and rooms[tc-1][j]!=rooms[tc][j]):
+                    # pygame.draw.line(screen, (0,0,0), (i+xoffset-1, y_adj+j*size-1), (i+xoffset-1, y_adj+(j+1)*size-1), 2) 
+                    pygame.draw.line(screen, (0,0,0), (xoffset+j*size-1, y_adj+i-1), (xoffset+(j+1)*size-1, y_adj+i-1), 2)
+            
+            tc+=1
+            
+            
+        temp_counter +=1
+            
+    y_adj = 20
+            
+    pygame.draw.rect(screen,(255, 255, 255), (0, y_adj + 9*size + 20, 1140, 5*psize), 0)     
     
-    x = 100
+    x = 20
     # print(len(p1_pieces))                    
     for a in range(len(p1_pieces)):
         this_piece = p1_pieces[a].id[0:-1]
@@ -207,7 +236,7 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
             # print(this_piece)
             # print(this_piece)
             x+=4*psize
-            y=420
+            y=y_adj + 9*size + 20
             # print(this_piece)
             this_shape = Shapes[Names.index(this_piece)]
             # print(this_shape)
@@ -222,6 +251,8 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
                         
                     x += psize
                 y += psize
+                
+    
     
     # Update the display
     pygame.display.flip()

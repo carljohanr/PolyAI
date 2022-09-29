@@ -47,3 +47,25 @@ Example games to be supported by V1:
 (V2 extension: Support hexagonal grids)
 
 Many of the games have high/very high branching factor for each move (1000s). 
+
+----------------
+
+9/27 project log
+
+- Isle of Cats family game implemented (without lessons) and a few bugs remaining 
+- Competitive player (Catbert) using single move lookahead and benchmark opponent (Greedy_bot)
+- Features generated in Board class for families (connected groups in one color)
+- (bug) Rendering does not work well - not refreshing at start of game and end of game
+- (bug) Passing/End of game is not handled correctly. Player should be able to pass their turn. If one player passes, the other player can play additional turns
+- (bug) Rows/columns are mixed up in a few places
+- (bug) Minimal error handling for move entry leads to crashes
+- (improvement) GUI should display scoring during the game
+- (improvement) GUI should allow for move entry using the mouse
+- AI player improvements:
+    - Add multi-ply search (e.g. min-max) or MCTS. Eval function may be too slow
+    - Generate possible moves iteratively (or in batch)
+    - Better handling of filling rooms
+    - Include treasures in search instead of separately
+    - Target zones to pick up the right treasure with the right color
+    - Handling first moves(s) separately?
+    - Parameter tweaking

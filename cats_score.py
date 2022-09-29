@@ -25,6 +25,27 @@ import copy
 
 four_directions = [[0,1],[0,-1],[1,0],[-1,0]]
 
+def cpenalty(grid,grid3):
+    
+    cpenalty = 0
+    
+    for  i in range(len(grid)):
+        for j in range(len(grid[0])):
+            if grid[i][j]>0:
+                grid[i][j]=1
+
+    for  i in range(len(grid)-1):
+        for j in range(len(grid[0])):
+            if min(grid3[i][j],grid3[i+1][j])>0:
+                cpenalty+=abs(grid[i][j]-grid[i+1][j])
+
+    for  i in range(len(grid)):
+        for j in range(len(grid[0])-1):
+            if min(grid3[i][j],grid3[i][j+1])>0:
+                cpenalty+=abs(grid[i][j]-grid[i][j+1])
+                
+    return cpenalty
+
 def explore(grid, x, y, visited, groups,n):
     groups[-1].append((x, y))
     visited.add((x, y))
