@@ -1,6 +1,4 @@
-# This file was modified from the blokus implementation at
-# https://digitalcommons.calpoly.edu/cgi/viewcontent.cgi?article=1305&context=cpesp
-# Blokus Backend - Claire 
+# Pieces for Isle of Cats base game
 
 import math
 
@@ -20,7 +18,7 @@ def rotatep(pt, refpt, deg):
             int(round(rotatey(pt, refpt, deg))));
 
 
-# Represents a Blokus Piece. Each piece has a unique ID and remembers its size so
+# Represents a Piece. Each piece has a unique ID and remembers its size so
 # player score can be easily calculated. 
 class Piece:
     def __init__(self, color):

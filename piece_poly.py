@@ -20,7 +20,7 @@ def rotatep(pt, refpt, deg):
             int(round(rotatey(pt, refpt, deg))));
 
 
-# Represents a Blokus Piece. Each piece has a unique ID and remembers its size so
+# Represents a Polyomino Piece. Each piece has a unique ID and remembers its size so
 # player score can be easily calculated. 
 class Piece:
     def __init__(self):

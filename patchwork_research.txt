@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Sep 30 09:15:18 2022
+
+@author: carljohan
+"""
+
+Legal Tile Placements
+
+Tiles must be placed according to the rules of the game, with the additional constraint that no part of the tile may extend beyond the 9x9 square playing board. No two tiles may overlap.
+Special Events
+
+Certain spaces on the time board are specially marked.
+
+Squares 20, 26, 32, 44, and 50 are marked with special patches (a brown square patch); the first player to reach each of these squares receives a special 1x1 'h' patch, which must be placed on their quilt board immediately.
+
+Squares 5, 11, 17, 23, 29, 35, 41, 47, and 53 are marked with a button; whenever either player reaches one of these squares, she receives a number of buttons according to the number of buttons shown on the patches already placed on her quilt board.
+Scoring
+
+Each player's score is calculated as follows:
+
+    score one point for each button the player holds;
+    for each uncovered square on the quilt board, subtract 2 points.
+
+The player with the highest score wins. In case of a tie, the player who reached the final space of the time board first wins.

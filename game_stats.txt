@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Sep 29 07:28:24 2022
+
+@author: carljohan
+"""
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Board 0, Catbert vs Greedy Bot
+
+Games Played:       500
+Games Won:          427
+Games Lost:         66
+Games Tied:         7
+Win Rate:          85.4%
+
+Average Score P1:     23.6
+Average Score P2:     11.0
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Board 6, Catbert vs Greedy Bot
+
+Games Played:       100
+Games Won:          80
+Games Lost:         20
+Games Tied:         0
+Win Rate:          80.0%
+
+Average Score P1:     16.1
+Average Score P2:     5.5
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Board 5, Catbert vs Greedy Bot
+
+Games Played:       100
+Games Won:          89
+Games Lost:         10
+Games Tied:         1
+Win Rate:          89.0%
+
+Average Score P1:     17.4
+Average Score P2:     3.6
+
+
+
+
+Patchwork
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Greedy vs Greedy v2
+
+Games Played:       100
+Games Won:          48
+Games Lost:         50
+Games Tied:         2
+Win Rate:          48.0%
+
+Average Score P1:     19.4
+Average Score P2:     20.9
+
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Greedy v2 vs Greedy
+
+Games Played:       100
+Games Won:          55
+Games Lost:         41
+Games Tied:         4
+Win Rate:          55.0%
+
+Average Score P1:     21.5
+Average Score P2:     18.7

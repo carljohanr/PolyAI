@@ -24,29 +24,34 @@ The game implementation should be modular and allow something along the lines of
         E.g. Blokus - points for the sizes of pieces placed during the game;
              Isle of Cats - points for creating 'families' of multiple cats
 
-Example games to be supported by V1:
+Games to be supported by V1:
 
     1. Polyssimo Challenge [implemented here using Pygame]    
     2. Isle of Cats [mostly implemented using hacky Python in subfolder, to be integrated]
     3. Patchwork
     4. Tetris Go
-    
-    ---
-
-    - Kingdomino    
-    - Llamaland
-    - Barenpark
-    - Patchwork
-    - My City
-    - Project L
-    - Copenhagen
-    - Helsinki
-    - Blokus
-    - FITS
+    5. Kingdomino    
+    6. Llamaland
+    7. Barenpark
+    8. My City
+    9. Project L
+    10. Copenhagen
+    11. Battle of LITS
 
 (V2 extension: Support hexagonal grids)
 
 Many of the games have high/very high branching factor for each move (1000s). 
+
+----------------
+
+References:
+
+- http://mrraow.com/index.php/aiai-home/ 
+- https://github.com/cfuchs981/blokus-ai (Blokus implementation that this code was initially built on top of)
+- https://github.com/danzel/PatchworkSim (Seems old and not well maintained. Patchwork is probably the wrong game for deep learning)
+- https://github.com/pbsinclair42/MCTS/ (MCTS reference implementation)
+- https://github.com/DenseLance/mcts-simple (Alternative MCTS package)
+- https://github.com/ai-boson/mcts MCTS description with python implementation
 
 ----------------
 
