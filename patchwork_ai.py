@@ -28,7 +28,7 @@ import random
 import grids
 
 # cutoff depth for alphabeta minimax search (default 2)
-Depth = 1
+Depth = 4
 # number of successor states returned (default 4)
 MovesToConsider = 4
 # change to adjust the number of games played (defualt 10)
@@ -93,10 +93,7 @@ class Board:
         self.time_costs = []
         
         
-   
-        
-        
-    def update(self, player_id, proposal,income_locations,simplified = 0, debug = 0):
+    def update(self, player_id, proposal,income_locations,simplified = 0, debug = 1):
 
         for i in range(10):
             if income_locations[i]>self.time_spent:
@@ -321,8 +318,11 @@ class Player:
         
         for p in pieces:
             if p.cost <= self.board.money:
-                placements.append[p]
+                placements.append(p)
         # print(t_counter)
+        
+        placements.append('Pass')
+        
         return placements;
 
     # Get the next move based off of the player's strategy
@@ -341,6 +341,7 @@ class Blokus:
         # self.board = board; 
         self.all_pieces = all_pieces; 
         self.pieces = random.sample(self.all_pieces,len(all_pieces))
+        self.pieces.append(piece.A());
         self.available_pieces = []
         self.income_locations = [5, 11, 17, 23, 29, 35, 41, 47, 53, 60]
         self.square_locations = [20, 26, 32, 44, 50, 60]
@@ -377,8 +378,7 @@ class Blokus:
     # Play the game with the list of players sequentially until the
     # game ends (no more pieces can be placed for any player)
 
-    def play_fast(self,prop_flag = 0):
-        
+    def play_fast(self,prop_flag = 0):  
         
         current = self.players[0]          
         if prop_flag != 0:
@@ -388,13 +388,10 @@ class Blokus:
                                             # the player's strategy
 
         if proposal is not None: # if there a possible proposed move
-            # print('Making a move')
             color = 1
-
             current.board.update(current.id, proposal,self.income_locations,1);
             current.update_player();
-            self.remove_piece(proposal); # remove used piece
-                    
+            self.remove_piece(proposal); # remove used piece                    
                 
         else:
             current.board.passed = 1
@@ -433,8 +430,8 @@ class Blokus:
         
         current = self.players[0]          
         proposal = current.next_move(self); # get the next move based on
-                                            # the player's strategy
-
+        # print('Proposal:',proposal)                                            # the player's strategy
+                                            
         if proposal is not None: # if there a possible proposed move
             # print('Making a move')
             color = 1
@@ -461,6 +458,7 @@ class Blokus:
             current.board.passed = 1
             current.board.update(current.id, self.players[1].board.time_spent,self.income_locations);
             current.update_player();
+            # print('New time spent',self.players[0].board.time_spent,self.players[1].board.time_spent)
 
         if current.board.prev_time_spent<self.square_locations[0] and current.board.time_spent>=self.square_locations[0]:
             # print('I got a square!')
@@ -475,6 +473,35 @@ class Blokus:
                 
         self.rounds += 1; # update game round
 
+
+    def make_move_fast(self,move,state):  
+        
+        newboard = copy.deepcopy(state)
+        current = newboard.game.players[0]
+        other = newboard.game.players[1]
+        
+        proposal = move
+        if move == 'Pass':
+            current.board.passed = 1
+            current.board.update(current.id, other.board.time_spent,self.income_locations);
+        else:
+            current.board.update(current.id, proposal,self.income_locations,1);
+            newboard.remove_piece(proposal); # remove used piece             
+        current.update_player();
+        
+
+        if current.board.prev_time_spent < newboard.square_locations[0] and current.board.time_spent>=newboard.square_locations[0]:
+            # print('I got a square!')
+            current.board.score +=2
+            newboard.square_locations.pop(0)
+
+        if current.time_spent > other.time_spent:
+            first = newboard.players.pop(0);
+            newboard.players += [first];
+                
+        newboard.rounds += 1; # update game round
+        
+        return newboard
 
     def make_move(self, move, state):
         "Return a new BoardState reflecting move made from given board state."
@@ -497,14 +524,27 @@ class Blokus:
     def successors(self, state):
         "Return a list of legal (move, state) pairs."
         # find and return up to MovesToConsider possible moves as successors
-        m = [(move, self.make_move(move, state))
-                for move in state.to_move.plausible_moves(state.to_move.pieces, state.game, MovesToConsider, state.to_move.id)]
+        m = [(move, self.make_move_fast(move, state))
+                for move in state.to_move.possible_pieces(state.game.pieces[0:3], state.game)]
+        # print('Possible moves',m)
         return m
 
     def terminal_test(self, state):
         "Return True if this is a final state for the game."
         # if we have no moves left, it's effectively a final state
-        return not state.to_move.plausible_moves(state.to_move.pieces, state.game, 1, state.to_move.id)
+        if self.players[0].time_spent == 53 and self.players[1].time_spent == 53:
+            return True
+        else:
+            return False
+
+
+    def utility(self, state, actual_turn_number):
+        this_player = state.p1
+        opponent = state.p2
+        
+        total = state.p1.board.potential - state.p2.board.potential - 3*(state.p1.board.time_spent-state.p2.board.time_spent)
+        
+        return total
 
 # This function will prompt the user for their piece
 def piece_prompt(options):
@@ -625,7 +665,6 @@ def Random_Piece(player, game, oval = 1):
     else:
         return None; # no possible move left
 
-
 def Rollout_Player(player,game,oval = 1):
 
     print('Round',game.rounds)    
@@ -704,8 +743,163 @@ def Rollout_Player(player,game,oval = 1):
     time.sleep(100)
         
 
+def Patchy(player, game, oval = 1):
+    # track start time for use in post-game move time analysis
+    if oval == 0:
+        return Greedy_Player(player,game,0)        
+    elif game.rounds>20:
+        return Greedy_Player(player,game,1)   
+
+    
+    start_time = time.time()
+    turn_number = 1
+    
+    # if no possible moves in this state, return None
+    # plausible_moves returns a possible move (if any) faster than possble_moves
+    
+    options = player.possible_pieces(game.pieces[0:3], game)
+    #print('Options:',options)
+    
+    if len(player.possible_pieces(game.pieces, game)) <= 1:
+        return None; # no possible move left
+
+    # copy current game info into a BoardState to be used within ab search
+    game_copy = copy.deepcopy(game)
+    state = BoardState(game_copy)
+    
+    #print(state.game.successors(state))
+    # perform alphabeta search and return a useful move
+    this_move = alphabeta_search(state, Depth, None, None, start_time, turn_number)
+    
+    # print(this_move, this_move =='Pass')
+
+    if this_move == 'Pass':
+        return None
+    else:
+        # print(this_move,this_move.id,options)
+        for p in options:
+            # print('Checking that one option matches')
+            # print(p.id,this_move.id)
+            if p.id == this_move.id:
+                # print('Ready to return move')
+                return Greedy_Player(player,game,2,[p])
+    
+    #time.sleep(100)
+
+# Tyler - AI implementation, taken from mancala.py
+
+def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None, turn_number=None):
+    """Search game to determine best action; use alpha-beta pruning.
+    This version cuts off search and uses an evaluation function."""
+    global count
+    global testing
+    global BigInitialValue
+    global MoveTimes
+
+    print('Starting search',d)
+
+    player = state.to_move
+    count = 0
+
+    def max_value(state, alpha, beta, depth):
+        global count, testing
+        if testing:
+            print("  "* depth, "Max  alpha: ", alpha, " beta: ", beta, " depth: ", depth)
+        if cutoff_test(state, depth):
+            if testing:
+                print("  "* depth, "Max cutoff returning ", eval_fn(state))
+            return eval_fn(state)
+        v = -BigInitialValue
+        succ = state.game.successors(state)
+        count = count + len(succ)
+        if testing:
+            print("  "*depth, "maxDepth: ", depth, "Total:", count, "Successors: ", len(succ))
+        for (a, s) in succ:
+            # Decide whether to call max_value or min_value, depending on whose move it is next.
+            # A player can move repeatedly if opponent is completely blocked
+            if state.to_move == s.to_move:
+                v = max(v, max_value(s, alpha, beta, depth+1))
+            else:
+                v = max(v, min_value(s, alpha, beta, depth+1))
+            if testing:
+                print("  "* depth, "max best value:", v)
+            if v >= beta:
+                return v
+            alpha = max(alpha, v)
+        return v
+
+    def min_value(state, alpha, beta, depth):
+        global count
+        if testing:
+            print("  "*depth, "Min  alpha: ", alpha, " beta: ", beta, " depth: ", depth)
+        if cutoff_test(state, depth):
+            if testing:
+                print("  "*depth, "Min cutoff returning ", eval_fn(state))
+            return eval_fn(state)
+        v = BigInitialValue
+        succ = state.game.successors(state)
+        count = count + len(succ)
+        if testing:
+            print("  "*depth, "minDepth: ", depth, "Total:", count, "Successors: ", len(succ))
+        for (a, s) in succ:
+            # Decide whether to call max_value or min_value, depending on whose move it is next.
+            # A player can move repeatedly if opponent is completely blocked
+            if state.to_move == s.to_move:
+                v = min(v, min_value(s, alpha, beta, depth+1))
+            else:
+                v = min(v, max_value(s, alpha, beta, depth+1))
+            if testing:
+                print("  "*depth, "min best value:", v)
+            if v <= alpha:
+                return v
+            beta = min(beta, v)
+        return v
+
+    def right_value(s, alpha, beta, depth):
+        if s.to_move.id == state.to_move.id:
+            return max_value(s, -BigInitialValue, BigInitialValue, 0)
+        else:
+            return min_value(s, -BigInitialValue, BigInitialValue, 0)
+
+    def argmin(seq, fn):
+        """Return an element with lowest fn(seq[i]) score; tie goes to first one.
+        >>> argmin(['one', 'to', 'three'], len)
+        'to'
+        """
+        # print(seq)        
+        
+        best = seq[0]; best_score = fn(best)
+        # print(best,best_score)
+        for x in seq:
+            x_score = fn(x)
+            if x_score < best_score:
+                best, best_score = x, x_score
+        return best
+
+    def argmax(seq, fn):
+        """Return an element with highest fn(seq[i]) score; tie goes to first one.
+        >>> argmax(['one', 'to', 'three'], len)
+        'three'
+        """
+        return argmin(seq, lambda x: -fn(x))
+
+    # Body of alphabeta_search starts here:
+    cutoff_test = (cutoff_test or
+                   (lambda state,depth: depth>d or state.game.terminal_test(state)))
+    eval_fn = eval_fn or (lambda state: state.game.utility(state, turn_number))
+    action, state = argmax(state.game.successors(state),
+                            lambda a_s: right_value(a_s[1], -BigInitialValue, BigInitialValue, 0))
+
+    # calculate move time, round to 2 decimal places, store for analysis
+    MoveTimes.append(round(time.time() - start_time, 2))
+    return action
+
+
+
+
 # Greedy Strategy: choose an available piece randomly based on own board only
 def Greedy_Player(player, game, oval = 1, single_option = 0):
+    # print(player.id,game.rounds)
     if oval == 2:
         #print('Hi',single_option)
         icount = player.board.icounter
@@ -846,7 +1040,7 @@ def Human_Player_Fast(player, game, oval = 1):
         move = Human_Player(player,game,oval)
         return move
 
-# Board state is no longer used
+# Need to fix how to keep track of players
 class BoardState:
     """Holds one state of the Blokus board, used to generate successors."""
     def __init__(self, game=None):
@@ -855,7 +1049,12 @@ class BoardState:
         self.p2 = [p for p in game.players if p.id == 2][0]
         # to_move keeps track of the player whose turn it is to move
         self.to_move = game.players[0]
-        self._board = game.board
+        self.p1._board = game.players[0].board
+        self.p2._board = game.players[1].board
+        self.remove_piece = game.remove_piece
+        self.square_locations = game.square_locations
+        self.players = game.players
+        self.rounds = game.rounds
 
 # Play a round of blokus (all players move), then print board.
 def play_blokus(blokus):
@@ -875,6 +1074,8 @@ def play_blokus(blokus):
         for player in blokus.players:
             s.append(player.terminal)
         # print(blokus.day,len(blokus.pieces))
+        
+        # print('State:', s, blokus.players[0].time_spent,blokus.players[1].time_spent)
         
         #print(s)
         
@@ -902,7 +1103,6 @@ def multi_run(repeat, one, two):
         order = []; # Reset
         
         all_pieces = []
-        all_pieces.append(piece.A());
         all_pieces.append(piece.B());
         all_pieces.append(piece.C());
         all_pieces.append(piece.D());
@@ -972,9 +1172,9 @@ def multi_run(repeat, one, two):
             gscores.append(player.score)
             print("Player "+ str(player.id) + " score "+ str(player.score) + ": ");
                   # + str([sh.id for sh in player.pieces]));
-            for sh in player.pieces:
-                if sh.id in Names:
-                    MCounts[Names.index(sh.id)]+=1
+            # for sh in player.pieces:
+            #     if sh.id in Names:
+            #         MCounts[Names.index(sh.id)]+=1
         print("Game end.");
         time.sleep(5*TS)
         # clearGUI()
@@ -1062,7 +1262,7 @@ def main():
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
     Games = 100
-    multi_run(Games, Rollout_Player, Greedy_Player);
+    multi_run(Games, Patchy, Greedy_Player);
     # multi_run(Games, Greedy_Player, Random_Player);
 
 if __name__ == '__main__':

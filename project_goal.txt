@@ -26,9 +26,9 @@ The game implementation should be modular and allow something along the lines of
 
 Games to be supported by V1:
 
-    1. Polyssimo Challenge [implemented here using Pygame]    
-    2. Isle of Cats [mostly implemented using hacky Python in subfolder, to be integrated]
-    3. Patchwork
+    1. Polyssimo Challenge [implemented]    
+    2. Isle of Cats [implemented]
+    3. Patchwork [implemented]
     4. Tetris Go
     5. Kingdomino    
     6. Llamaland
