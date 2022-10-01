@@ -22,6 +22,7 @@ import operator
 import time
 import numpy as np
 from patchwork_score import cpenalty
+import random
 # import cats_score
 # from cats_score import score_board_0
 import grids
@@ -119,8 +120,9 @@ class Board:
             
             # print(proposal)
     
-            placement = proposal.points        
-            pset = set(placement)
+            if simplified == 0:
+                placement = proposal.points        
+                pset = set(placement)
             
             self.time_spent += proposal.time
             self.time_costs.append(proposal.time)
@@ -152,18 +154,18 @@ class Board:
         self.money_vector.append(self.money)
         
         if self.time_spent == 53 and self.has_square == 0:
-            print('Player',player_id)
-            print('Cost:',self.proposal_vector,sum(self.proposal_vector))
-            print('Incomes:',self.income_vector,sum(self.income_vector))
-            print('Piece income:',self.piece_incomes,sum(self.piece_incomes))
-            print('Time cost:',self.time_costs,sum(self.time_costs))
-            print('Time pass:', self.pass_incomes,sum(self.pass_incomes))
-            print('Money:',self.money_vector)
-            print('Debug:',self.empty_spaces,81-sum([sum(s) for s in self.state]))
-            # print(sum(s for s in self.state))
-            print('')
             self.terminal = 1
-        
+            if debug == 1:
+                print('Player',player_id)
+                print('Cost:',self.proposal_vector,sum(self.proposal_vector))
+                print('Incomes:',self.income_vector,sum(self.income_vector))
+                print('Piece income:',self.piece_incomes,sum(self.piece_incomes))
+                print('Time cost:',self.time_costs,sum(self.time_costs))
+                print('Time pass:', self.pass_incomes,sum(self.pass_incomes))
+                print('Money:',self.money_vector)
+                print('Debug:',self.empty_spaces,81-sum([sum(s) for s in self.state]))
+                # print(sum(s for s in self.state))
+                print('')        
         
         
         # print("Player",player_id, "new state:", self.score,self.potential,self.time_spent,self.money,self.income,self.empty_spaces,self.terminal,'\n')            
@@ -355,7 +357,9 @@ class Blokus:
         
     # Remove a player's Piece
     def remove_piece(self, piece):
+        #print (piece.id, [p.id for p in self.pieces])
         i = 0
+        # print(piece,piece.id)
         for p in self.pieces:
             if p.id == piece.id:
                 this_i = i
@@ -373,10 +377,14 @@ class Blokus:
     # Play the game with the list of players sequentially until the
     # game ends (no more pieces can be placed for any player)
 
-    def play_fast(self):
+    def play_fast(self,prop_flag = 0):
+        
         
         current = self.players[0]          
-        proposal = current.next_move(self); # get the next move based on
+        if prop_flag != 0:
+            proposal = prop_flag
+        else:
+            proposal = current.next_move(self); # get the next move based on
                                             # the player's strategy
 
         if proposal is not None: # if there a possible proposed move
@@ -385,11 +393,7 @@ class Blokus:
 
             current.board.update(current.id, proposal,self.income_locations,1);
             current.update_player();
-            
-            if current.board.has_square == 1:
-                current.board.has_square = 0
-            else:
-                self.remove_piece(proposal); # remove used piece
+            self.remove_piece(proposal); # remove used piece
                     
                 
         else:
@@ -399,7 +403,7 @@ class Blokus:
 
         if current.board.prev_time_spent<self.square_locations[0] and current.board.time_spent>=self.square_locations[0]:
             # print('I got a square!')
-            current.board.has_square = 1
+            current.board.score +=2
             self.square_locations.pop(0)
 
         # print('Time:',firstp.time_spent,secondp.time_spent,'\n')
@@ -599,28 +603,115 @@ def Random_Player(player, game, oval = 1):
     return None; # no possible move left
 
 
+# Random Strategy: choose an available piece randomly
+def Random_Piece(player, game, oval = 1):
+    options = []
+    icount = player.board.icounter
+        
+    for p in game.pieces[0:3]:
+        if p.cost <= player.board.money:
+            options.append(p)
+
+    option_value = [(icount*p.income-p.cost)/p.time+random.random() for p in options]
+
+    max_score = -1000
+    if len(options)>0:
+        for a in range(len(options)):
+            if option_value[a]>max_score:
+                max_index = a
+                max_score = option_value[a]
+        #print(all_possibles[max_index].id)
+        return options[max_index]
+    else:
+        return None; # no possible move left
+
+
 def Rollout_Player(player,game,oval = 1):
 
-    if oval == 1:
+    print('Round',game.rounds)    
+
+    if oval == 1 and game.rounds<25:
+        options = []
+        for p in game.pieces[0:3]:
+            if p.cost <= player.board.money:
+                options.append(p)
         icount = player.board.icounter
-        options = [p for p in game.pieces[0:3]];
-        option_value = [(icount*p.income-p.cost)/p.time for p in options]
+        option_value = [round((icount*p.income-p.cost)/p.time,1) for p in options]
     else:
         return Greedy_Player(player,game,oval)
     
-    game_copy = copy.deepcopy.game
-    game_copy.player1.strategy = 'Random_Player'
-    game_copy.player2.strategy = 'Random_Player'
+    if len(options)<2:
+        return Greedy_Player(player,game,oval)        
     
-    while game_copy.players[0].board.terminal == 0 or game_copy.players[1].board.terminal == 0:
-        game_copy.play_fast()
     
-    print(game_copy.players[0].id,game_copy.players[0].score)
+    win_list = []
+    
+    for j in range(len(options)):
+        
+        game_temp = copy.deepcopy(game)
+        game_temp.play_fast(options[j])
+        
+        wins = 0
+        score_diff = 0
+    
+        for i in range(1000):
+        
+            game_copy = copy.deepcopy(game_temp)
+            current = game_copy.players[0]
+            other = game_copy.players[1]
+            current.strategy = Random_Piece
+            other.strategy = Random_Piece
+            
+            while current.board.terminal == 0 or other.board.terminal == 0:
+                game_copy.play_fast()
+                # print('Hi!')
+                # print(current.time_spent,other.time_spent)
+            
+            
+            if player.id == game_copy.players[0].id:
+                my_score = game_copy.players[0].score
+                your_score = game_copy.players[1].score
+            else:
+                my_score = game_copy.players[1].score
+                your_score = game_copy.players[0].score        
+            
+            if my_score>your_score:
+                win = 1
+            elif my_score==your_score:
+                win = 0.5
+            else:
+                win = 0
+                
+            wins += win
+            score_diff += my_score-your_score
+            #print(win, my_score,your_score)
+            
+        win_list.append(wins)
+        print('Rollout outcomes:', wins,score_diff,option_value[j])
+       
+    max_score = -1000
+    if len(options)>0:
+        for a in range(len(options)):
+            if win_list[a]>max_score:
+                max_index = a
+                max_score = win_list[a]
+        # print(all_possibles[max_index].id,all_possibles[max_index].color,round(scores[a],0),sorted(debug[a],reverse=True))
+        #print (options[a].id)
+        return Greedy_Player(player,game,2,[options[a]])
+    else:
+        return None; # no possible move left
+       
+    time.sleep(100)
         
 
 # Greedy Strategy: choose an available piece randomly based on own board only
-def Greedy_Player(player, game, oval = 1):
-    if oval == 1:
+def Greedy_Player(player, game, oval = 1, single_option = 0):
+    if oval == 2:
+        #print('Hi',single_option)
+        icount = player.board.icounter
+        options = single_option;
+        option_value = [(icount*p.income-p.cost)/p.time for p in options]
+    elif oval == 1:
         icount = player.board.icounter
         options = [p for p in game.pieces[0:3]];
         option_value = [(icount*p.income-p.cost)/p.time for p in options]
@@ -663,7 +754,7 @@ def Greedy_Player(player, game, oval = 1):
             if scores[a]>max_score:
                 max_index = a
                 max_score = scores[a]
-        # print(all_possibles[max_index].id,all_possibles[max_index].color,round(scores[a],0),sorted(debug[a],reverse=True))
+        #print(all_possibles[max_index].id)
         return all_possibles[max_index]
     else:
         return None; # no possible move left
@@ -970,8 +1061,9 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    Games = 10
-    multi_run(Games, Greedy_Player, Random_Player);
+    Games = 100
+    multi_run(Games, Rollout_Player, Greedy_Player);
+    # multi_run(Games, Greedy_Player, Random_Player);
 
 if __name__ == '__main__':
     main();
