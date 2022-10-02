@@ -85,24 +85,25 @@ Average Score P2:     18.7
 
 Patchy vs Greedy
 
+Games Played:       100
+Games Won:          75
+Games Lost:         25
+Games Tied:         0
+Win Rate:          75.0%
+
+Average Score P1:     24.7
+Average Score P2:     11.1
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Patchy vs Random
+
 Games Played:       10
 Games Won:          9
 Games Lost:         1
 Games Tied:         0
 Win Rate:          90.0%
 
-Average Score P1:     24.4
-Average Score P2:     11.1
-
-
-
-================== STATISTICS ACROSS ALL GAMES ==================
-
-Games Played:       10
-Games Won:          8
-Games Lost:         2
-Games Tied:         0
-Win Rate:          80.0%
-
-Average Score P1:     30.3
-Average Score P2:     10.0
+Average Score P1:     22.7
+Average Score P2:     -3.6

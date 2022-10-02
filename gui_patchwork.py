@@ -25,7 +25,7 @@ Shapes = [[[0,0,0],[0,0,0],[0,1,0],[0,1,0],[0,0,0]],[[0,0,0],[0,1,1],[0,1,0],[0,
           [[0,1,0],[1,1,1],[1,1,1],[0,1,0],[0,0,0]],[[0,1,1],[0,1,0],[0,1,0],[0,1,0],[0,0,0]],[[0,0,0],[1,1,1],[0,1,0],[0,1,0],[0,0,0]],[[0,1,1],[0,1,1],[0,1,0],[0,1,0],[0,0,0]],\
           [[1,1,0],[0,1,0],[0,1,0],[0,1,1],[0,0,0]],[[0,0,0],[1,1,1],[1,0,0],[0,0,0],[0,0,0]],[[1,1,1],[0,1,0],[0,1,0],[0,1,0],[0,0,0]],[[0,0,0],[1,1,0],[0,1,1],[0,0,1],[0,0,0]],\
           [[0,0,0],[1,1,1],[1,0,1],[0,0,0],[0,0,0]],[[1,0,0],[1,1,0],[0,1,0],[0,1,0],[0,0,0]],[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,0]],[[0,0,0],[1,1,0],[1,1,0],[0,1,1],[0,0,0]]]
-
+    
 # Initialize pygame
 pygame.init()
 
@@ -39,7 +39,7 @@ from pygame.locals import (
 
 # Define constants for the screen width and height
 SCREEN_WIDTH = 1140
-SCREEN_HEIGHT = 980
+SCREEN_HEIGHT = 1140
 
 # Create the screen object
 # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
@@ -48,7 +48,24 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 # Fill the screen with white
 screen.fill((255, 255, 255))
 
-def render(p1_board,p2_board,p1_pieces,p2_pieces):
+def render(p1_board,p2_board,p1_pieces):
+    
+    p1_bs = [p1_board.state,p1_board.state2,p1_board.state3,p1_board.state4]
+    p2_bs = [p2_board.state,p2_board.state2,p2_board.state3,p2_board.state4]
+
+    black = (0,0,0)
+    pygame.draw.rect(screen,(255, 255, 255), (0, 0, 1140, 80), 0)   
+    
+    p1_stats = str(p1_board.time_spent)+'  '+str(p1_board.prev_time_spent)+'  '+str(p1_board.money)+'  '+str(p1_board.score)+'  '+str(p1_board.potential)
+    font1 = pygame.font.SysFont('Helvetica.ttc', 48)
+    img1 = font1.render(p1_stats, True, black)
+    screen.blit(img1, (150,40))
+
+    p2_stats = str(p2_board.time_spent)+'  '+str(p2_board.prev_time_spent)+'  '+str(p2_board.money)+'  '+str(p2_board.score)+'  '+str(p2_board.potential)
+    font1 = pygame.font.SysFont('Helvetica.ttc', 48)
+    img1 = font1.render(p2_stats, True, black)
+    screen.blit(img1, (690,40))
+
     
     # print(p1_pieces)
     # print(p2_pieces)
@@ -65,7 +82,7 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
             pygame.exit()
     
     x,y = 0,0
-    pad = 5
+    pad = 3
     pads = 0
     size = 60
     psize = 25
@@ -82,12 +99,12 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
 
     temp_counter = 0
 
-    for boards in [p1_board,p2_board]:
+    for boards in [p1_bs,p2_bs]:
         
         
-        y_adj = 20
+        y_adj = 80
         if temp_counter >0:
-            y_adj = 20
+            y_adj = 80
             x_adj = 580
         
         board = boards[0]
@@ -232,22 +249,26 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
             
     y_adj = 20
             
-    pygame.draw.rect(screen,(255, 255, 255), (0, y_adj + 9*size + 20, 1140, 18*psize), 0)     
+    pygame.draw.rect(screen,(255, 255, 255), (0, y_adj + 9*size + 70, 1140, 19*psize), 0)     
     
     x = 20
     # print(len(p1_pieces)) 
 
     temp_counter = 0
     yrow = 0
-                   
+          
+    # y=y_adj + 9*size + yrow + 50
+         
     for a in range(len(p1_pieces)):
+        p = p1_pieces[a]
         this_piece = p1_pieces[a].id
         this_color = 1
         if this_piece in Names:
             # print(this_piece)
             # print(this_piece)
             x+=4*psize
-            y=y_adj + 9*size + yrow + 20
+            y=y_adj + 9*size + yrow + 100
+
             # print(this_piece)
             this_shape = Shapes[Names.index(this_piece)]
             # print(this_shape)
@@ -256,18 +277,25 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces):
                 for j in range(len(this_shape[i])):
                     #print("The current element is " + str(board[i][j]))
                     if(this_shape[i][j] == 1):
-                        pygame.draw.rect(screen,color_map[this_color-1], (x, y, psize, psize), 0)     
+                        pygame.draw.rect(screen,color_map[this_color-1], (x, y, psize, psize), 0)   
                     else:
                         pygame.draw.rect(screen,(255, 255, 255), (x, y, psize, psize), 0) 
                         
                     x += psize
                 y += psize
+        
+            font1 = pygame.font.SysFont('Helvetica.ttc', 24)
+            text = str(p.cost) + '-' + str(p.time) + '-' + str(p.income)
+            img1 = font1.render(text, True, black)
+            screen.blit(img1, (x-60, y-150))
+
                 
         temp_counter +=1
         if temp_counter%11 ==0:
-            yrow+=5*psize+10
+            yrow+=6*psize+10
             x=20
-                
+      
+
     
     
     # Update the display

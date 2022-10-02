@@ -28,7 +28,7 @@ import random
 import grids
 
 # cutoff depth for alphabeta minimax search (default 2)
-Depth = 4
+Depth = 5
 # number of successor states returned (default 4)
 MovesToConsider = 4
 # change to adjust the number of games played (defualt 10)
@@ -91,6 +91,7 @@ class Board:
         self.proposal_vector = []
         self.pass_incomes = []
         self.time_costs = []
+        self.square_fast = 0
         
         
     def update(self, player_id, proposal,income_locations,simplified = 0, debug = 1):
@@ -146,7 +147,7 @@ class Board:
             self.income_vector.append(self.income)
             self.icounter -= 1
         
-        self.score = self.money-2*self.empty_spaces
+        self.score = self.money-2*self.empty_spaces+2*self.square_fast
         self.potential = self.score + self.icounter * self.income
         self.money_vector.append(self.money)
         
@@ -401,6 +402,7 @@ class Blokus:
         if current.board.prev_time_spent<self.square_locations[0] and current.board.time_spent>=self.square_locations[0]:
             # print('I got a square!')
             current.board.score +=2
+            current.board.square_fast += 1
             self.square_locations.pop(0)
 
         # print('Time:',firstp.time_spent,secondp.time_spent,'\n')
@@ -424,8 +426,7 @@ class Blokus:
             secondp = self.players[0]
             firstp = self.players[1]                  
           
-        render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
-                   [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],self.pieces,self.pieces)     
+        render(firstp.board,secondp.board,self.pieces)     
             # time.sleep(TS)
         
         current = self.players[0]          
@@ -447,8 +448,6 @@ class Blokus:
                     # print('Current index:', self.pieces.index(proposal))
                     self.remove_piece(proposal); # remove used piece
                     
-                render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
-                       [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],self.pieces,self.pieces)                     
                 # print(time.time()-t)
 
             else: # end the game if an invalid move is proposed
@@ -470,7 +469,8 @@ class Blokus:
         if current.board.has_square==0 and self.players[0].time_spent > self.players[1].time_spent:
             first = self.players.pop(0);
             self.players += [first];
-                
+           
+        render(firstp.board,secondp.board,self.pieces)           
         self.rounds += 1; # update game round
 
 
@@ -527,6 +527,8 @@ class Blokus:
         m = [(move, self.make_move_fast(move, state))
                 for move in state.to_move.possible_pieces(state.game.pieces[0:3], state.game)]
         # print('Possible moves',m)
+        
+        # print(len(m))
         return m
 
     def terminal_test(self, state):
@@ -740,7 +742,7 @@ def Rollout_Player(player,game,oval = 1):
     else:
         return None; # no possible move left
        
-    time.sleep(100)
+    # time.sleep(100)
         
 
 def Patchy(player, game, oval = 1):
@@ -786,7 +788,7 @@ def Patchy(player, game, oval = 1):
     
     #time.sleep(100)
 
-# Tyler - AI implementation, taken from mancala.py
+# AI implementation, taken from mancala.py
 
 def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None, turn_number=None):
     """Search game to determine best action; use alpha-beta pruning.
@@ -795,10 +797,16 @@ def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None
     global testing
     global BigInitialValue
     global MoveTimes
+    
+    testing = False
 
     print('Starting search',d)
 
     player = state.to_move
+    if state.to_move.id == 1:
+        flip = 1
+    else:
+        flip = -1
     count = 0
 
     def max_value(state, alpha, beta, depth):
@@ -818,7 +826,7 @@ def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None
             # Decide whether to call max_value or min_value, depending on whose move it is next.
             # A player can move repeatedly if opponent is completely blocked
             if state.to_move == s.to_move:
-                v = max(v, max_value(s, alpha, beta, depth+1))
+                v = max(v, max_value(s, alpha, beta, depth))
             else:
                 v = max(v, min_value(s, alpha, beta, depth+1))
             if testing:
@@ -845,7 +853,7 @@ def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None
             # Decide whether to call max_value or min_value, depending on whose move it is next.
             # A player can move repeatedly if opponent is completely blocked
             if state.to_move == s.to_move:
-                v = min(v, min_value(s, alpha, beta, depth+1))
+                v = min(v, min_value(s, alpha, beta, depth))
             else:
                 v = min(v, max_value(s, alpha, beta, depth+1))
             if testing:
@@ -886,9 +894,11 @@ def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None
     # Body of alphabeta_search starts here:
     cutoff_test = (cutoff_test or
                    (lambda state,depth: depth>d or state.game.terminal_test(state)))
-    eval_fn = eval_fn or (lambda state: state.game.utility(state, turn_number))
+    eval_fn = eval_fn or (lambda state: flip*state.game.utility(state, turn_number))
     action, state = argmax(state.game.successors(state),
                             lambda a_s: right_value(a_s[1], -BigInitialValue, BigInitialValue, 0))
+
+    print('Total nodes evaluated:', count)
 
     # calculate move time, round to 2 decimal places, store for analysis
     MoveTimes.append(round(time.time() - start_time, 2))
@@ -1087,6 +1097,7 @@ def play_blokus(blokus):
         # else:
         #     e=0
         
+        # TS=0.5
         time.sleep(TS)
 
 # Run a game with two players.
@@ -1261,7 +1272,7 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    Games = 100
+    Games = 1
     multi_run(Games, Patchy, Greedy_Player);
     # multi_run(Games, Greedy_Player, Random_Player);
 
