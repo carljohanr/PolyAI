@@ -39,7 +39,7 @@ from pygame.locals import (
 
 # Define constants for the screen width and height
 SCREEN_WIDTH = 1140
-SCREEN_HEIGHT = 1140
+SCREEN_HEIGHT = 1220
 
 # Create the screen object
 # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
@@ -48,7 +48,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 # Fill the screen with white
 screen.fill((255, 255, 255))
 
-def render(p1_board,p2_board,p1_pieces):
+def render(p1_board,p2_board,p1_pieces,game_info):
     
     p1_bs = [p1_board.state,p1_board.state2,p1_board.state3,p1_board.state4]
     p2_bs = [p2_board.state,p2_board.state2,p2_board.state3,p2_board.state4]
@@ -56,17 +56,23 @@ def render(p1_board,p2_board,p1_pieces):
     black = (0,0,0)
     pygame.draw.rect(screen,(255, 255, 255), (0, 0, 1140, 80), 0)   
     
-    p1_stats = str(p1_board.time_spent)+'  '+str(p1_board.prev_time_spent)+'  '+str(p1_board.money)+'  '+str(p1_board.score)+'  '+str(p1_board.potential)
+    p1_stats = str(p1_board.time_spent)+'  '+str(p1_board.money)+'  '+str(p1_board.score)+'  '+str(p1_board.potential)
     font1 = pygame.font.SysFont('Helvetica.ttc', 48)
     img1 = font1.render(p1_stats, True, black)
-    screen.blit(img1, (150,40))
+    screen.blit(img1, (150,30))
 
-    p2_stats = str(p2_board.time_spent)+'  '+str(p2_board.prev_time_spent)+'  '+str(p2_board.money)+'  '+str(p2_board.score)+'  '+str(p2_board.potential)
+    p2_stats = str(p2_board.time_spent)+'  '+str(p2_board.money)+'  '+str(p2_board.score)+'  '+str(p2_board.potential)
     font1 = pygame.font.SysFont('Helvetica.ttc', 48)
     img1 = font1.render(p2_stats, True, black)
-    screen.blit(img1, (690,40))
+    screen.blit(img1, (690,30))
 
     
+    pygame.draw.rect(screen,(255, 255, 255), (0, 1140, 1140, 80), 0)   
+    gi_string = str(game_info[0][:-1])+' '+str(game_info[1][:-1])
+    font1 = pygame.font.SysFont('Helvetica.ttc', 48)
+    img1 = font1.render(gi_string, True, black)
+    screen.blit(img1, (20,1160))
+
     # print(p1_pieces)
     # print(p2_pieces)
     

@@ -28,7 +28,7 @@ import random
 import grids
 
 # cutoff depth for alphabeta minimax search (default 2)
-Depth = 5
+Depth = 4
 # number of successor states returned (default 4)
 MovesToConsider = 4
 # change to adjust the number of games played (defualt 10)
@@ -426,10 +426,15 @@ class Blokus:
             secondp = self.players[0]
             firstp = self.players[1]                  
           
-        render(firstp.board,secondp.board,self.pieces)     
+         
+        game_info = []
+        game_info.append([i for i in self.income_locations if i>=max(firstp.board.time_spent,firstp.board.time_spent)])
+        game_info.append(self.square_locations)
+          
+        render(firstp.board,secondp.board,self.pieces,game_info)     
             # time.sleep(TS)
         
-        current = self.players[0]          
+        current = self.players[0]  
         proposal = current.next_move(self); # get the next move based on
         # print('Proposal:',proposal)                                            # the player's strategy
                                             
@@ -469,8 +474,11 @@ class Blokus:
         if current.board.has_square==0 and self.players[0].time_spent > self.players[1].time_spent:
             first = self.players.pop(0);
             self.players += [first];
-           
-        render(firstp.board,secondp.board,self.pieces)           
+
+        game_info = []
+        game_info.append([i for i in self.income_locations if i>=max(firstp.board.time_spent,firstp.board.time_spent)])
+        game_info.append(self.square_locations)
+        render(firstp.board,secondp.board,self.pieces,game_info)           
         self.rounds += 1; # update game round
 
 
@@ -914,11 +922,11 @@ def Greedy_Player(player, game, oval = 1, single_option = 0):
         #print('Hi',single_option)
         icount = player.board.icounter
         options = single_option;
-        option_value = [(icount*p.income-p.cost)/p.time for p in options]
+        option_value = [(2*p.size+icount*p.income-p.cost)/p.time for p in options]
     elif oval == 1:
         icount = player.board.icounter
         options = [p for p in game.pieces[0:3]];
-        option_value = [(icount*p.income-p.cost)/p.time for p in options]
+        option_value = [(2*p.size+icount*p.income-p.cost)/p.time for p in options]
     else:
         options = [p for p in game.square]
         option_value = [0]
@@ -969,7 +977,7 @@ def Greedy_Player_v2(player, game, oval = 1):
     if oval == 1:
         icount = player.board.icounter
         options = [p for p in game.pieces[0:3]];
-        option_value = [(icount*p.income-p.cost) for p in options]
+        option_value = [(2*p.size+icount*p.income-p.cost) for p in options]
     else:
         options = [p for p in game.square]
         option_value = [0]
@@ -1078,11 +1086,14 @@ def play_blokus(blokus):
     # Termination criteria is two consecutive passes (total score did not change)
     # Should this be part of main class?
     
+    co = 0
+    
     while e<2:
         s = []
         blokus.play()
         for player in blokus.players:
             s.append(player.terminal)
+        co+=1
         # print(blokus.day,len(blokus.pieces))
         
         # print('State:', s, blokus.players[0].time_spent,blokus.players[1].time_spent)
@@ -1098,7 +1109,8 @@ def play_blokus(blokus):
         #     e=0
         
         # TS=0.5
-        time.sleep(TS)
+        
+        # time.sleep(1)
 
 # Run a game with two players.
 def multi_run(repeat, one, two):
@@ -1272,8 +1284,8 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    Games = 1
-    multi_run(Games, Patchy, Greedy_Player);
+    Games = 100
+    multi_run(Games, Patchy, Greedy_Player_v2);
     # multi_run(Games, Greedy_Player, Random_Player);
 
 if __name__ == '__main__':

@@ -107,3 +107,17 @@ Win Rate:          90.0%
 
 Average Score P1:     22.7
 Average Score P2:     -3.6
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Greedy v2 (piece size) vs Greedy
+
+Games Played:       100
+Games Won:          72
+Games Lost:         25
+Games Tied:         3
+Win Rate:          72.0%
+
+Average Score P1:     24.1
+Average Score P2:     14.8
