@@ -2,9 +2,8 @@
 # https://digitalcommons.calpoly.edu/cgi/viewcontent.cgi?article=1305&context=cpesp
 
 '''
-Isle of Cats AI
-This code implements Isle of Cats family game, using the code-base from poly_ai.py. 
-It implements all rules except lessons, and has a greedy player which is decently competitive.
+Patchwork AI
+This code implements Patchwork, using the code-base from poly_ai.py. 
 
 It has been adapted from Blokus code, and contains some hacks that makes it illogical 
 (e.g. referring to all points on the board as 'corners' in the piece placement code)
@@ -28,7 +27,7 @@ import random
 import grids
 
 # cutoff depth for alphabeta minimax search (default 2)
-Depth = 4
+Depth = 6
 # number of successor states returned (default 4)
 MovesToConsider = 4
 # change to adjust the number of games played (defualt 10)
@@ -342,6 +341,7 @@ class Blokus:
         # self.board = board; 
         self.all_pieces = all_pieces; 
         self.pieces = random.sample(self.all_pieces,len(all_pieces))
+        # self.pieces = self.all_pieces
         self.pieces.append(piece.A());
         self.available_pieces = []
         self.income_locations = [5, 11, 17, 23, 29, 35, 41, 47, 53, 60]
@@ -966,7 +966,7 @@ def Greedy_Player(player, game, oval = 1, single_option = 0):
             if scores[a]>max_score:
                 max_index = a
                 max_score = scores[a]
-        #print(all_possibles[max_index].id)
+        # print(all_possibles[max_index].id)
         return all_possibles[max_index]
     else:
         return None; # no possible move left
@@ -1027,12 +1027,12 @@ def Greedy_Player_v2(player, game, oval = 1):
 def Human_Player(player, game, oval = 1):
     options = []
     if oval == 1:
-        for p in game.pieces:
+        for p in game.pieces[0:3]:
             possibles = player.possible_moves([p], game);
             if len(possibles) != 0:
                 options.append(p)
     else:
-        options = [p for p in game.treasures]
+        options = [p for p in game.square]
         # print(options)
     while len(options) > 0: # if there are still possible moves
         piece = piece_prompt(options);
@@ -1086,6 +1086,8 @@ def play_blokus(blokus):
     # Termination criteria is two consecutive passes (total score did not change)
     # Should this be part of main class?
     
+    # time.sleep(10)
+    
     co = 0
     
     while e<2:
@@ -1094,9 +1096,18 @@ def play_blokus(blokus):
         for player in blokus.players:
             s.append(player.terminal)
         co+=1
+        
+        # if co>0:
+        #     input("Press Enter to continue...")
+        
         # print(blokus.day,len(blokus.pieces))
         
         # print('State:', s, blokus.players[0].time_spent,blokus.players[1].time_spent)
+        
+        #time.sleep(5)
+        
+        # if co == 1:
+        
         
         #print(s)
         
@@ -1285,7 +1296,7 @@ def main():
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
     Games = 100
-    multi_run(Games, Patchy, Greedy_Player_v2);
+    multi_run(Games, Human_Player, Greedy_Player);
     # multi_run(Games, Greedy_Player, Random_Player);
 
 if __name__ == '__main__':

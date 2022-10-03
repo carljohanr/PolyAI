@@ -24,7 +24,7 @@ import numpy as np
 from cats_score import score_board
 import cats_score
 # from cats_score import score_board_0
-import grids
+# import grids
 
 # cutoff depth for alphabeta minimax search (default 2)
 Depth = 1

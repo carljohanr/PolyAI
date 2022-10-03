@@ -39,7 +39,7 @@ from pygame.locals import (
 
 # Define constants for the screen width and height
 SCREEN_WIDTH = 1140
-SCREEN_HEIGHT = 1220
+SCREEN_HEIGHT = 1280
 
 # Create the screen object
 # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
@@ -56,22 +56,22 @@ def render(p1_board,p2_board,p1_pieces,game_info):
     black = (0,0,0)
     pygame.draw.rect(screen,(255, 255, 255), (0, 0, 1140, 80), 0)   
     
-    p1_stats = str(p1_board.time_spent)+'  '+str(p1_board.money)+'  '+str(p1_board.score)+'  '+str(p1_board.potential)
+    p1_stats = str(p1_board.time_spent)+'  '+str(p1_board.money)+'  '+str(p1_board.income)+'  '+str(p1_board.score)+'  '+str(p1_board.potential)
     font1 = pygame.font.SysFont('Helvetica.ttc', 48)
     img1 = font1.render(p1_stats, True, black)
     screen.blit(img1, (150,30))
 
-    p2_stats = str(p2_board.time_spent)+'  '+str(p2_board.money)+'  '+str(p2_board.score)+'  '+str(p2_board.potential)
+    p2_stats = str(p2_board.time_spent)+'  '+str(p2_board.money)+'  '+str(p2_board.income)+'  '+str(p2_board.score)+'  '+str(p2_board.potential)
     font1 = pygame.font.SysFont('Helvetica.ttc', 48)
     img1 = font1.render(p2_stats, True, black)
     screen.blit(img1, (690,30))
 
     
-    pygame.draw.rect(screen,(255, 255, 255), (0, 1140, 1140, 80), 0)   
+    pygame.draw.rect(screen,(255, 255, 255), (0, 1220, 1220, 80), 0)   
     gi_string = str(game_info[0][:-1])+' '+str(game_info[1][:-1])
     font1 = pygame.font.SysFont('Helvetica.ttc', 48)
     img1 = font1.render(gi_string, True, black)
-    screen.blit(img1, (20,1160))
+    screen.blit(img1, (20,1220))
 
     # print(p1_pieces)
     # print(p2_pieces)
@@ -255,7 +255,7 @@ def render(p1_board,p2_board,p1_pieces,game_info):
             
     y_adj = 20
             
-    pygame.draw.rect(screen,(255, 255, 255), (0, y_adj + 9*size + 70, 1140, 19*psize), 0)     
+    pygame.draw.rect(screen,(255, 255, 255), (0, y_adj + 9*size + 70, 1140, 22*psize), 0)     
     
     x = 20
     # print(len(p1_pieces)) 
@@ -273,7 +273,7 @@ def render(p1_board,p2_board,p1_pieces,game_info):
             # print(this_piece)
             # print(this_piece)
             x+=4*psize
-            y=y_adj + 9*size + yrow + 100
+            y=y_adj + 9*size + yrow + 120
 
             # print(this_piece)
             this_shape = Shapes[Names.index(this_piece)]
@@ -291,14 +291,17 @@ def render(p1_board,p2_board,p1_pieces,game_info):
                 y += psize
         
             font1 = pygame.font.SysFont('Helvetica.ttc', 24)
+            p_value = 2*p.size + p.income * p1_board.icounter - p.cost
             text = str(p.cost) + '-' + str(p.time) + '-' + str(p.income)
+            text2 = str(p_value) + '-' + str(round(p_value/p.time,1))
             img1 = font1.render(text, True, black)
-            screen.blit(img1, (x-60, y-150))
-
+            img2 = font1.render(text2, True, black)
+            screen.blit(img1, (x-60, y-170))
+            screen.blit(img2, (x-60, y-150))
                 
         temp_counter +=1
         if temp_counter%11 ==0:
-            yrow+=6*psize+10
+            yrow+=6*psize+30
             x=20
       
 

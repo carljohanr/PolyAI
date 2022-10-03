@@ -124,7 +124,7 @@ class E(Piece):
         self.id = 'E';
         
     def set_points(self, x, y):
-        self.points = [(x, y),(x+1,y),(x+1,y+1),(x+1,y+2)];
+        self.points = [(x, y),(x+1,y),(x+1,y+1),(x+2,y+1)];
         
 class F(Piece):
     def __init__(self):
@@ -180,7 +180,7 @@ class J(Piece):
         self.id = 'J';
         
     def set_points(self, x, y):
-        self.points = [(x, y),(x+1,y),(x+2,y),(x+1,y+1),(x+1,y+2),(x+1,y+3)];
+        self.points = [(x, y),(x+1,y),(x+2,y),(x+1,y+1),(x+2,y+1),(x+3,y+1)];
         
 class K(Piece):
     def __init__(self):
@@ -404,7 +404,7 @@ class c(Piece):
         self.id = 'c';
         
     def set_points(self, x, y):
-        self.points = [(x, y),(x+1,y),(x+1,y+1),(x+1,y+2),(x+2,y+2)]; 
+        self.points = [(x, y),(x+1,y),(x+1,y+1),(x+2,y+1),(x+2,y+2)]; 
         
 
 class d(Piece):

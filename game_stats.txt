@@ -121,3 +121,48 @@ Win Rate:          72.0%
 
 Average Score P1:     24.1
 Average Score P2:     14.8
+
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Patchy (v2) vs Greedy v2
+
+Games Played:       500
+Games Won:          366
+Games Lost:         127
+Games Tied:         7
+Win Rate:          73.2%
+
+Average Score P1:     25.9
+Average Score P2:     15.2
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Greedy v2 vs Patchy (v2)
+
+Games Played:       100
+Games Won:          28
+Games Lost:         71
+Games Tied:         1
+Win Rate:          28.0%
+
+Average Score P1:     17.0
+Average Score P2:     25.0
+
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Pathy (Depth 6) vs Greedy v2
+
+Games Played:       100
+Games Won:          71
+Games Lost:         27
+Games Tied:         2
+Win Rate:          71.0%
+
+Average Score P1:     25.6
+Average Score P2:     16.0
+
