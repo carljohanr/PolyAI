@@ -75,6 +75,8 @@ UselessInit = {
 AIUseless = UselessInit
 OpponentUseless = UselessInit
 
+
+
 # Blokus Board
 # DC-Claire
 class Board:
@@ -85,10 +87,8 @@ class Board:
         self.debug = 0
         self.passed = 0
         self.score = 0
+        self.score_breakdown = [0,0]
         self.potential = 0
-
-        # Family scores, indexed from 1
-        self.fscore = [0,0,8,11,15,20,25,30,35,40,45,50,55,60,65,70]
 
         self.state = [[0] * ncol for i in range(nrow)];
         self.state2 = [[0] * ncol for i in range(nrow)];
@@ -126,6 +126,10 @@ class Board:
             for j in range(4):
                 self.state3[4*y+j][4*x:4*x+4]=[self.addon_value]*4
                 self.state4[4*y+j][4*x:4*x+4]=addon[j]
+                for i in range(4):
+                    if addon[j][i] == -1:
+                        self.state3[4*y+j][4*x+i] = 0
+                        
                 
 
             for j in range(6):
@@ -134,7 +138,7 @@ class Board:
                     self.board_adj_map[vc][hc]=1
             self.board_adj_map[y][x]=0
             
-            print ('New maps:',self.board_map,self.board_adj_map)
+            # print ('New maps:',self.board_map,self.board_adj_map)
             
         
         elif move_type == 'play_piece':
@@ -160,6 +164,7 @@ class Board:
                         this_resource = self.state4[row][col]
                         if this_resource in [1,2,3]:
                             self.has_piece[this_resource-1] += 1
+                        # Can only expand 3 times. Should probably handle this elsewhere.
                         elif this_resource == 10 and self.has_expansion + self.addon_value < 4:
                             self.has_expansion += 1
                         this_room = self.state3[row][col]
@@ -167,7 +172,7 @@ class Board:
                             self.park_spaces_covered[this_room-1] +=1
             
            
-            self.this_completed = sum([1 for a in zip(self.park_spaces_covered,old_spaces_covered) if a[0]==16 and a[0]-a[1]>0])
+            self.this_completed = sum([1 for a in zip(self.park_spaces_covered,old_spaces_covered) if a[0]==15 and a[0]-a[1]>0])
             # if self.this_completed>0:
                 
             # print('Resources gained:',self.has_piece,self.has_expansion)
@@ -177,7 +182,11 @@ class Board:
             if len(pset) != proposal.size:
                 print(proposal.id)
             
-            self.score += proposal.score
+            piece_type = proposal.id[0:1]
+            if piece_type == 'E':
+                self.score_breakdown[1] += proposal.score
+            elif piece_type == 'A':
+                self.score_breakdown[0] += proposal.score
                 
             score_breakdown = [0,0,0]
             potential_breakdown = [0,0,0,0,0]
@@ -258,7 +267,6 @@ class Player:
         self.score = 0 # player's current score
         self.potential = 0
         self.score_breakdown = [0,0,0,0,0]
-        self.score = 0
         self.is_blocked = False
         # Has the player picked up resources to expand the board?
         self.has_expansion = 0
@@ -276,24 +284,28 @@ class Player:
 
     # Updates player information after placing a board Piece
     def update_player(self):
-        self.score_breakdown[1] = self.board.score
+        self.score_breakdown[1:3] = self.board.score_breakdown
         self.score = sum(self.score_breakdown)
         self.potential = self.board.potential    
         self.has_expansion = self.board.has_expansion
         self.has_piece = self.board.has_piece
-        if self.board.filled_spaces == 64:
+        # print('Filled spaces:',self.board.filled_spaces)
+        if self.board.filled_spaces == 60:
             self.terminal = 1
+            # print('Player',self.id, 'score:',self.score,self.score_breakdown)
         
 
     # Get a unique list of all possible placements
-    def possible_moves(self,pieces, game):
+    def possible_moves(self,pieces, game,override = 0):
 
-        # print(pieces)        
+        move_type = game.move_type 
+        if override == 1:
+            move_type = 'play_piece'
 
-        # Should rename to actions
-        
-        if game.move_type in ['add_piece','add_piece_forced']:
+        # Should rename to actions        
+        if move_type in ['add_piece','add_piece_forced']:
             
+            # What kind of piece did the player obtain? 
             if self.has_piece[2]>0:
                 max_index = 20
             elif self.has_piece[1]>0:
@@ -304,12 +316,15 @@ class Player:
             options = []
             
             for i in range(max_index):
-                if game.piece_counts[i] > 0:
+                if game.piece_counts[i] > 0 and game.move_type == 'add_piece':
+                    options.append(i)
+                elif game.piece_counts[i] > 0 and len(self.possible_moves([game.all_pieces[i][0]],game,1))>0:
+                    # print(move_type,i)
                     options.append(i)
                     
             return options
         
-        elif game.move_type == 'expand_board':
+        elif move_type == 'expand_board':
             
             options = []
             
@@ -324,7 +339,7 @@ class Player:
             return options
             
         
-        elif game.move_type == 'play_piece':
+        elif move_type == 'play_piece':
             locations = []
             t_counter = 0
             for i in range(self.board.ncol):
@@ -403,6 +418,13 @@ class Blokus:
             for j in range(4):
                 p.board.state3[4+j][4:8]=[1,1,1,1]
                 p.board.state4[4+j][4:8]=start[j]
+                for i in range(4):
+                    if start[j][i] == -1:
+                        # print('-1 found')
+                        p.board.state3[4+j][4+i] = 0
+        
+        # print(p.board.state3)
+        # time.sleep(100)
         
         self.pieces = []
         self.previous = 0;
@@ -421,7 +443,8 @@ class Blokus:
             
         self.piece_counts = [len(a) for a in all_pieces]
         # self.piece_counts = [50,12,8,8,3,3,3,3,1,1,1,1,1,1,1,1,1,1,1,1]
-        self.pieces_display = [p[0] for p in zip(self.piece_ids,self.piece_counts) if p[1]>0]
+        self.pieces_display = [p[0][0] for p in zip(self.all_pieces,self.piece_counts) if p[1]>0]
+        # print('Display:',self.pieces_display)
         self.area_completion_bonus = [16,14,12,10,8,6,4,2]
         
         
@@ -458,6 +481,7 @@ class Blokus:
         self.piece_counts[pindex]-=1
         # print(self.piece_counts)
         self.players[0].pieces.append(this_piece)
+        self.pieces_display = [p[0][0] for p in zip(self.all_pieces,self.piece_counts) if p[1]>0]
 
     def remove_treasure(self, piece):
         self.treasures = [p for p in self.treasures if p.id != piece.id];
@@ -531,11 +555,9 @@ class Blokus:
                 
         else:
             current.passed = 1
-            print('I should not be here...',self.move_type,current.has_piece)
+            print('I should not be here...',self.move_type,current.has_piece,current.pieces)
                     
             # put the current player to the back of the queue
-           
-        current.board.treasure = 0
 
         if current.has_expansion == 0 and sum(current.has_piece) == 0:
             if self.players[1].terminal == 0:
@@ -553,6 +575,7 @@ class Blokus:
             # time.sleep(10)
             
             if len(pmoves)==0:
+                # print(nextp.pieces)
                 self.move_type = 'add_piece_forced'
                 self.players[0].has_piece = [1,0,0]
             else:
@@ -736,8 +759,8 @@ def Greedy_Player(player, game, oval = 1, single_option = 0):
         
         # print('Scores by piece:',scores,max_index,max_score,possibles[max_index])
         # The heuristic makes sense, but player ends up with holes that cannot be filled. Just picking the top index gets more square pieces
-        # return possibles[max_index]
-        return max(possibles)
+        return possibles[max_index]
+        # return max(possibles)
 
     elif game.move_type == 'expand_board':
         dummy = 0
@@ -756,11 +779,13 @@ def Greedy_Player(player, game, oval = 1, single_option = 0):
         maxval = max([max(s) for s in game.players[0].board.state2])
         temp_counter = 0
         
+        # print('Pieces in hand:', options)
+        
         # Copying a partial state and evaluating it is unnecessary. Better do it in the update_board class.
         for piece in options:
             # print('Piece:', piece)
             possibles = player.possible_moves([piece], game);
-            # print(len(possibles))
+            # print('Options for piece:',piece,len(possibles))
             if len(possibles) != 0: # if there is possible moves
                 for m in range(len(possibles)):
                     this_score = 0
@@ -769,14 +794,21 @@ def Greedy_Player(player, game, oval = 1, single_option = 0):
                     # Should make a copy of the state and use the update function instead
                     for (p0,p1) in possibles[m].points:
                         grid[p1][p0]=1
-                        this_score += 2*grid3[p1][p0]
-                    this_score += possibles[m].score-0.1*cpenalty(grid,grid2)
+                        if grid3[p1][p0]<10:
+                            this_score += 2*grid3[p1][p0]
+                        elif grid3[p1][p0]==10:
+                            this_score += 5 
+                    this_score += possibles[m].score-cpenalty(grid,grid2)
                     # debug.append(fam_dummy)
                     scores.append(this_score)
                     all_possibles.append(possibles[m])            
 
             else: # no possible move for that piece
-                options.remove(piece); # remove it from the options
+                dummy = 0 # Do nothing
+                # This statement created issues in the loop since we are looping over options
+                # options.remove(piece); # remove it from the options
+        
+        # print('--')
 
         temp_counter+=1
 
@@ -787,11 +819,13 @@ def Greedy_Player(player, game, oval = 1, single_option = 0):
             # print(all_possibles[max_index].id)
             return all_possibles[max_index]
         else:
+            print('No possible options')
             return None; # no possible move left
 
 
 def getMax(candidates,scores):  
     max_score = -1000000
+    max_index = 0
     for a in range(len(candidates)):
          if scores[a]>max_score:
              max_index = a
@@ -852,9 +886,6 @@ def play_blokus(blokus):
     a=0
     s=0
     e=0
-
-    # Termination criteria is two consecutive passes (total score did not change)
-    # Should this be part of main class?
     
     while e<2:
         old_s = s
@@ -867,11 +898,6 @@ def play_blokus(blokus):
         if blokus.players[0].terminal + blokus.players[1].terminal == 2:
             e =2
         
-        # if old_s == s:
-        #     e+=1
-        # else:
-        #     e=0
-        time.sleep(0.5)
         time.sleep(TS)
 
 # Run a blokus game with two players.
@@ -953,12 +979,12 @@ def multi_run(repeat, one, two):
         # render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
         # [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],blokus.pieces,P2.pieces)  
                 
-        blokus.play();
+        # blokus.play();
         plist = sorted(blokus.players, key = lambda p: p.id);
         gscores = []
         for player in plist:
             gscores.append(player.score)
-            print("Player "+ str(player.id) + " score "+ str(player.score) + ": ");
+            print("Player "+ str(player.id) + " score: "+ str(player.score), player.score_breakdown);
                   # + str([sh.id for sh in player.pieces]));
             for sh in player.pieces:
                 if sh.id in Names:
@@ -1049,8 +1075,8 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    Games = 1
-    multi_run(Games, Greedy_Player, Random_Player_v2);
+    Games = 20
+    multi_run(Games, Greedy_Player, Greedy_Player);
 
 if __name__ == '__main__':
     main();

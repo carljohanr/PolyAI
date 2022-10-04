@@ -13,8 +13,7 @@ Senay - GUI Implementation
 # Import the pygame module
 import pygame
 
-Names = ['X','T','Z','W','U','F','P','I','L','N','Y','V','F0','F1','F2','F3','F4','F5','C0','C1','D0','W0','Z0','X0',\
-         'T0','T1','N0','N1','P0','P1','NN','RT1','RT2','RT3','RT4','RT5'] #'TR1','TR2','TR3','TR4']
+Names = ['G1','G2','G3','G4','A1','A2','A3','A4','E1','E2','E3','E4','E5','E6','E7','E8','E9','E10','E11','E12'] #'TR1','TR2','TR3','TR4']
 
     
 COLOR_MAP = {
@@ -35,11 +34,11 @@ COLOR_MAP = {
     range(100, 101): (30, 30, 30)
     }
 
-Shapes = [[[0,0,0],[0,1,0],[1,1,1],[0,1,0],[0,0,0]],[[0,0,0],[1,1,1],[0,1,0],[0,1,0],[0,0,0]],[[0,0,0],[1,1,0],[0,1,0],[0,1,1],[0,0,0]],[[0,0,0],[1,1,0],[0,1,1],[0,0,1],[0,0,0]],\
-          [[0,0,0],[0,0,0],[1,1,1],[1,0,1],[0,0,0]],[[0,0,0],[0,1,1],[1,1,0],[0,1,0],[0,0,0]],[[0,0,0],[1,1,1],[1,1,0],[0,0,0],[0,0,0]],[[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0]],\
-          [[0,1,1],[0,1,0],[0,1,0],[0,1,0],[0,0,0]],[[0,1,0],[0,1,0],[0,1,1],[0,0,1],[0,0,0]],[[0,1,0],[0,1,1],[0,1,0],[0,1,0],[0,0,0]],[[0,0,0],[1,1,1],[1,0,0],[1,0,0],[0,0,0]],\
-          [[0,1,1],[0,1,0],[0,1,1],[0,1,0],[0,0,0]],[[0,1,1],[1,1,0],[0,1,0],[0,1,0],[0,0,0]],[[0,1,1],[0,1,0],[1,1,0],[0,1,0],[0,0,0]],[[1,0,0],[1,0,0],[1,1,1],[0,1,0],[0,0,0]],\
-          [[1,0,0],[1,1,1],[0,1,0],[0,1,0],[0,0,0]],[[1,0,0],[1,1,0],[0,1,1],[0,1,0],[0,0,0]],[[0,1,1],[0,1,0],[0,1,0],[0,1,1],[0,0,0]],[[0,1,1],[0,1,0],[0,1,1],[0,0,1],[0,0,0]],\
+Shapes = [[[0,0,0],[0,0,0],[0,1,0],[0,0,0],[0,0,0]],[[0,0,0],[0,1,0],[0,1,0],[0,0,0],[0,0,0]],[[0,0,0],[0,1,0],[0,1,0],[0,1,0],[0,0,0]],[[0,0,0],[0,0,0],[0,1,1],[0,0,1],[0,0,0]],\
+          [[0,0,0],[0,0,0],[1,1,1],[1,0,0],[0,0,0]],[[0,0,0],[0,1,1],[0,1,1],[0,0,0],[0,0,0]],[[0,0,0],[1,1,1],[0,1,0],[0,0,0],[0,0,0]],[[0,0,0],[0,1,1],[0,1,1],[0,0,0],[0,0,0]],\
+          [[0,0,0],[1,1,1],[1,0,1],[0,0,0],[0,0,0]],[[0,0,0],[1,1,1],[0,0,1],[0,0,1],[0,0,0]],[[0,1,0],[0,1,0],[0,1,0],[1,1,0],[0,0,0]],[[0,0,0],[1,1,0],[0,1,1],[0,0,1],[0,0,0]],\
+          [[0,1,0],[0,1,0],[0,1,1],[0,0,1],[0,0,0]],[[0,1,0],[1,1,0],[0,1,0],[0,1,0],[0,0,0]],[[0,0,0],[0,1,0],[1,1,1],[0,1,0],[0,0,0]],[[0,0,0],[1,1,1],[0,1,0],[0,1,0],[0,0,0]],\
+          [[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0]],[[0,0,0],[1,1,0],[0,1,0],[0,1,1],[0,0,0]],[[0,0,0],[0,0,1],[1,1,1],[0,1,0],[0,0,0]],[[0,0,0],[0,1,1],[0,1,1],[0,1,0],[0,0,0]],\
           [[0,1,0],[0,1,1],[0,1,1],[0,1,0],[0,0,0]],[[0,1,1],[0,1,0],[1,1,0],[1,0,0],[0,0,0]],[[1,0,0],[1,1,1],[0,0,1],[0,0,1],[0,0,0]],[[0,1,0],[0,1,1],[1,1,0],[0,1,0],[0,0,0]],\
           [[0,1,0],[1,1,1],[0,1,0],[0,1,0],[0,0,0]],[[1,0,0],[1,1,1],[1,0,0],[1,0,0],[0,0,0]],[[1,1,0],[1,0,0],[1,1,0],[0,1,0],[0,0,0]],[[0,0,0],[1,1,1],[0,1,0],[0,1,1],[0,0,0]],
           [[0,1,0],[1,1,0],[1,1,0],[1,0,0],[0,0,0]],[[0,0,0],[1,1,1],[1,1,0],[0,1,0],[0,0,0]],[[0,0,0],[0,1,0],[1,1,0],[1,0,0],[0,0,0]],[[0,0,0],[1,1,0],[1,1,0],[0,0,0],[0,0,0]],\
@@ -57,8 +56,8 @@ from pygame.locals import (
 )
 
 # Define constants for the screen width and height
-SCREEN_WIDTH = 1140
-SCREEN_HEIGHT = 1120
+SCREEN_WIDTH = 1320
+SCREEN_HEIGHT = 900
 
 # Create the screen object
 # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
@@ -67,7 +66,16 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 # Fill the screen with white
 screen.fill((255, 255, 255))
 
-def render(p1_board,p2_board,p1_pieces,p2_pieces, dummy):
+def truncId(piece):
+    if piece.size <=3:
+        return piece.id[0:-1]
+    else:
+        return piece.id
+
+
+def render(p1_board,p2_board,p1_pieces,p2_pieces, game_pieces):
+    
+    pygame.draw.rect(screen,(255, 255, 255), (0, 0, 1400, 1120), 0) 
     
     # print(p1_pieces)
     # print(p2_pieces)
@@ -104,9 +112,10 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces, dummy):
     for boards in [p1_board,p2_board]:
         
         
-        y_adj = 20
+        y_adj = 170
         if temp_counter >0:
-            y_adj = 640
+            y_adj = 170
+            x_adj = 700
         
         board = boards[0]
         pieces = boards[1]
@@ -207,6 +216,7 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces, dummy):
             y += size    
     
         y = y_adj
+        x = x_adj
         for i in range(len(board)):   
             x = x_adj
             for j in range(len(board[i])):
@@ -225,7 +235,7 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces, dummy):
         for i in range(0, size*len(board[0])+1, size):
             for j in range(len(board)):
                 if (tc==0 and rooms[j][tc]>0) or (tc==len(board[0]) and rooms[j][tc-1]>0) or (tc>0 and tc<len(board[0]) and rooms[j][tc-1]!=rooms[j][tc]):
-                    pygame.draw.line(screen, (0,0,0), (i+xoffset-1, y_adj+j*size-1), (i+xoffset-1, y_adj+(j+1)*size-1), 2)   
+                    pygame.draw.line(screen, (0,0,0), (i+x_adj-1, y_adj+j*size-1), (i+x_adj-1, y_adj+(j+1)*size-1), 2)   
             tc+=1
            
         tc=0
@@ -233,21 +243,47 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces, dummy):
             for j in range(len(board[0])):
                 if (tc==0 and rooms[tc][j]>0) or (tc==len(board) and rooms[tc-1][j]>0) or (tc>0 and tc<len(board) and rooms[tc-1][j]!=rooms[tc][j]):
                     # pygame.draw.line(screen, (0,0,0), (i+xoffset-1, y_adj+j*size-1), (i+xoffset-1, y_adj+(j+1)*size-1), 2) 
-                    pygame.draw.line(screen, (0,0,0), (xoffset+j*size-1, y_adj+i-1), (xoffset+(j+1)*size-1, y_adj+i-1), 2)
+                    pygame.draw.line(screen, (0,0,0), (x_adj+j*size-1, y_adj+i-1), (x_adj+(j+1)*size-1, y_adj+i-1), 2)
             
             tc+=1
             
             
         temp_counter +=1
             
-    y_adj = 20
+    y_adj = 120
             
     pygame.draw.rect(screen,(255, 255, 255), (0, y_adj + 9*size + 20, 1140, 5*psize), 0)     
+
+    x = 20
+    # print(len(p1_pieces))                    
+    for a in range(len(game_pieces)):
+        this_piece = truncId(game_pieces[a])
+        this_color = game_pieces[a].color
+        if this_piece in Names:
+            # print(this_piece)
+            # print(this_piece)
+            x+=4*psize
+            y= 20
+            # print(this_piece)
+            this_shape = Shapes[Names.index(this_piece)]
+            # print(this_shape)
+            for i in range(len(this_shape)):
+                x-=3*psize
+                for j in range(len(this_shape[i])):
+                    #print("The current element is " + str(board[i][j]))
+                    if(this_shape[i][j] == 1):
+                        pygame.draw.rect(screen,color_map[this_color-1], (x, y, psize, psize), 0)     
+                    else:
+                        pygame.draw.rect(screen,(255, 255, 255), (x, y, psize, psize), 0) 
+                        
+                    x += psize
+                y += psize
+
     
     x = 20
     # print(len(p1_pieces))                    
     for a in range(len(p1_pieces)):
-        this_piece = p1_pieces[a].id[0:-1]
+        this_piece = truncId(p1_pieces[a])
         this_color = p1_pieces[a].color
         if this_piece in Names:
             # print(this_piece)
@@ -269,7 +305,30 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces, dummy):
                     x += psize
                 y += psize
                 
-    
+    x = 720
+    # print(len(p1_pieces))                    
+    for a in range(len(p2_pieces)):
+        this_piece = truncId(p2_pieces[a])
+        this_color = p2_pieces[a].color
+        if this_piece in Names:
+            # print(this_piece)
+            # print(this_piece)
+            x+=4*psize
+            y=y_adj + 9*size + 20
+            # print(this_piece)
+            this_shape = Shapes[Names.index(this_piece)]
+            # print(this_shape)
+            for i in range(len(this_shape)):
+                x-=3*psize
+                for j in range(len(this_shape[i])):
+                    #print("The current element is " + str(board[i][j]))
+                    if(this_shape[i][j] == 1):
+                        pygame.draw.rect(screen,color_map[this_color-1], (x, y, psize, psize), 0)     
+                    else:
+                        pygame.draw.rect(screen,(255, 255, 255), (x, y, psize, psize), 0) 
+                        
+                    x += psize
+                y += psize
     
     # Update the display
     pygame.display.flip()
@@ -277,3 +336,4 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces, dummy):
 def clearGUI():
     screen.fill((255, 255, 255))
     pygame.display.flip()
+
