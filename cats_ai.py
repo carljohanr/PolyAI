@@ -24,7 +24,7 @@ import numpy as np
 from cats_score import score_board
 import cats_score
 # from cats_score import score_board_0
-# import grids
+import grids
 
 # cutoff depth for alphabeta minimax search (default 2)
 Depth = 1
@@ -1196,7 +1196,7 @@ def main():
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
     Games = 500
-    multi_run(Games, Catbert, Catbert);
+    multi_run(Games, Greedy_Player, Greedy_Player);
 
 if __name__ == '__main__':
     main();

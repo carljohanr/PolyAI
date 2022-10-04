@@ -72,16 +72,16 @@ Define 17 shapes in Isle of Cats base game
 #         [[0,1,1,1],[1,1,0,0]],[[1,1,1,1],[0,1,0,0]],[[1,1,1,1],[1,0,0,0]],[[1,1,0],[0,1,1]]]
 
 
-class Pass(Piece):
-    def __init__(self,color):
-        self.size = 0;
-        self.uniques = 1; # number of unique transformations per piece, for AI
-        self.color=color
-        self.id = 'Pass'+str(self.color);
+# class Pass(Piece):
+#     def __init__(self,color):
+#         self.size = 0;
+#         self.uniques = 1; # number of unique transformations per piece, for AI
+#         self.color=color
+#         self.id = 'Pass'+str(self.color);
         
-    def set_points(self, x, y):
-        self.points = [];
-        self.corners = [];
+#     def set_points(self, x, y):
+#         self.points = [];
+#         self.corners = [];
     
 class TR1(Piece):
     def __init__(self,color):

@@ -7,7 +7,6 @@ Created on Wed Sep 21 23:50:35 2022
 """
 
 Goal of the project. Extend to support a broader range of polyomino-based games. 
-For example, Isle of Cats (implemented in a hacky way in separate file)
 
 The game implementation should be modular and allow something along the lines of the following:
     
@@ -52,6 +51,11 @@ References:
 - https://github.com/pbsinclair42/MCTS/ (MCTS reference implementation)
 - https://github.com/DenseLance/mcts-simple (Alternative MCTS package)
 - https://github.com/ai-boson/mcts MCTS description with python implementation
+
+
+Frameworks inspired by Alphago Zero
+- https://github.com/richemslie/galvanise_zero
+- https://github.com/facebookarchive/Polygames
 
 ----------------
 
