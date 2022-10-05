@@ -34,8 +34,8 @@ COLOR_MAP = {
     range(100, 101): (30, 30, 30)
     }
 
-Shapes = [[[0,0,0],[0,0,0],[0,1,0],[0,0,0],[0,0,0]],[[0,0,0],[0,1,0],[0,1,0],[0,0,0],[0,0,0]],[[0,0,0],[0,1,0],[0,1,0],[0,1,0],[0,0,0]],[[0,0,0],[0,0,0],[0,1,1],[0,0,1],[0,0,0]],\
-          [[0,0,0],[0,0,0],[1,1,1],[1,0,0],[0,0,0]],[[0,0,0],[0,1,1],[0,1,1],[0,0,0],[0,0,0]],[[0,0,0],[1,1,1],[0,1,0],[0,0,0],[0,0,0]],[[0,0,0],[0,1,1],[0,1,1],[0,0,0],[0,0,0]],\
+Shapes = [[[0,0,0],[0,0,0],[0,1,0],[0,0,0],[0,0,0]],[[0,0,0],[0,1,0],[0,1,0],[0,0,0],[0,0,0]],[[0,0,0],[0,1,0],[0,1,1],[0,0,0],[0,0,0]],[[0,0,0],[0,1,0],[0,1,0],[0,1,0],[0,0,0]],\
+          [[0,0,0],[0,0,0],[1,1,1],[1,0,0],[0,0,0]],[[0,0,0],[0,1,0],[0,1,1],[0,0,1],[0,0,0]],[[0,0,0],[1,1,1],[0,1,0],[0,0,0],[0,0,0]],[[0,0,0],[0,1,1],[0,1,1],[0,0,0],[0,0,0]],\
           [[0,0,0],[1,1,1],[1,0,1],[0,0,0],[0,0,0]],[[0,0,0],[1,1,1],[0,0,1],[0,0,1],[0,0,0]],[[0,1,0],[0,1,0],[0,1,0],[1,1,0],[0,0,0]],[[0,0,0],[1,1,0],[0,1,1],[0,0,1],[0,0,0]],\
           [[0,1,0],[0,1,0],[0,1,1],[0,0,1],[0,0,0]],[[0,1,0],[1,1,0],[0,1,0],[0,1,0],[0,0,0]],[[0,0,0],[0,1,0],[1,1,1],[0,1,0],[0,0,0]],[[0,0,0],[1,1,1],[0,1,0],[0,1,0],[0,0,0]],\
           [[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0]],[[0,0,0],[1,1,0],[0,1,0],[0,1,1],[0,0,0]],[[0,0,0],[0,0,1],[1,1,1],[0,1,0],[0,0,0]],[[0,0,0],[0,1,1],[0,1,1],[0,1,0],[0,0,0]],\
@@ -67,7 +67,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 screen.fill((255, 255, 255))
 
 def truncId(piece):
-    if piece.size <=3:
+    if piece.size <=4:
         return piece.id[0:-1]
     else:
         return piece.id
@@ -99,6 +99,8 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces, game_pieces):
     
     bsize = 10
     bpad = (size-bsize)/2
+    
+    pad2 = 13
     
     xoffset = 20
     
@@ -157,6 +159,7 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces, game_pieces):
  
         color_map = [(0,0,255),(0,255,0),(255,0,0),(255,255,255)]
         color_map = [(11, 185, 35),(0, 100, 0),(140, 140, 140),(0, 191, 255),(238, 188, 29)]
+        color_map2 = [(0,0,0),(255,255,255),(255,132,0)]
         black = (0,0,0)
         white = (255,255,255)
         
@@ -179,18 +182,14 @@ def render(p1_board,p2_board,p1_pieces,p2_pieces, game_pieces):
                     this_color = color_map[this_loc-1]
                     pygame.draw.rect(screen,this_color, (x+pad, y+pad, size-2*pad, size-2*pad), 0)
                 # Items/resources on board
-                if this_item in [2,3,4,5,6]:
-                    if this_loc == this_item-1:
-                        this_color = white
-                    else:
-                        this_color = color_map[this_item-2]
-                    pygame.draw.rect(screen,this_color, (x+bpad, y+bpad, size-2*bpad, size-2*bpad), 0)
-                elif this_item in [1]:
-                    if this_loc>0:
-                        this_color = (120,120,120)
-                    else:
-                        this_color = black
-                    pygame.draw.rect(screen,this_color, (x+bpad, y+bpad, size-2*bpad, size-2*bpad), 0)
+                if this_item in [1,2,3] and this_loc == 0:
+                    this_color = color_map2[this_item-1]
+                    t = this_item
+                    pygame.draw.rect(screen,this_color, (x+bpad-t, y+bpad-t, size-2*bpad+2*t, size-2*bpad+2*t), 0)
+                elif this_item in [10] and this_loc == 0:
+                    this_color = black
+                    pygame.draw.rect(screen,this_color, (x+bpad+2, y+pad2, size-2*bpad-4, size-2*pad2), 0)
+                    pygame.draw.rect(screen,this_color, (x+pad2, y+bpad+2, size-2*pad2, size-2*bpad-4), 0)
                 else:
                     # pygame.draw.rect(screen, (255,255,255), (x+pad, y+pad, size-2*pad, size-2*pad), 0)   
                     useless = 0

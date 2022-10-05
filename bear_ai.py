@@ -23,7 +23,7 @@ import time
 import numpy as np
 from cats_score import score_board
 import cats_score
-from patchwork_score import cpenalty
+from bear_score import cpenalty
 # from cats_score import score_board_0
 
 # cutoff depth for alphabeta minimax search (default 2)
@@ -89,6 +89,7 @@ class Board:
         self.score = 0
         self.score_breakdown = [0,0]
         self.potential = 0
+        self.potential_breakdown = [0,0,0,0,0,0]
 
         self.state = [[0] * ncol for i in range(nrow)];
         self.state2 = [[0] * ncol for i in range(nrow)];
@@ -107,7 +108,14 @@ class Board:
         self.has_piece = [0,0,0]    
         self.this_completed = 0
         
+        # Add a flag to see if any enclosures are available to the player
+        # Not yet used. Once enclosures are depleted, change status of remaining ones so they become less valuable.
+        self.enclosure_available = 1
+        
         self.addon_value = 1
+        self.this_score = 0
+        
+        self.holes = []
         
         self.visited = set()
         
@@ -117,6 +125,9 @@ class Board:
                     self.visited.add((row,col))
         
     def update(self, player_id, move_type,proposal,debug = 0):
+        
+        self.potential_breakdown = [0,0,0,0,0,0]
+        self.this_score = 0
         
         if move_type == 'expand_board':
             addon = proposal[2]
@@ -137,6 +148,8 @@ class Board:
                 if abs(vc-y)+abs(hc-x)==1 and self.board_map[vc][hc]==0:
                     self.board_adj_map[vc][hc]=1
             self.board_adj_map[y][x]=0
+            
+            self.has_expansion -= 1
             
             # print ('New maps:',self.board_map,self.board_adj_map)
             
@@ -163,9 +176,12 @@ class Board:
                         self.state2[row][col] = maxval+1
                         this_resource = self.state4[row][col]
                         if this_resource in [1,2,3]:
+                            rval = [0.5,2,2]
                             self.has_piece[this_resource-1] += 1
+                            self.potential_breakdown[2] += 2*rval[this_resource-1]
                         # Can only expand 3 times. Should probably handle this elsewhere.
                         elif this_resource == 10 and self.has_expansion + self.addon_value < 4:
+                            self.potential_breakdown[3] += 5
                             self.has_expansion += 1
                         this_room = self.state3[row][col]
                         if this_room>0:
@@ -173,14 +189,16 @@ class Board:
             
            
             self.this_completed = sum([1 for a in zip(self.park_spaces_covered,old_spaces_covered) if a[0]==15 and a[0]-a[1]>0])
+            
+            self.potential_breakdown[5]+= 3*self.this_completed
             # if self.this_completed>0:
                 
             # print('Resources gained:',self.has_piece,self.has_expansion)
             # print('Debug:',self.park_spaces_covered,self.filled_spaces,self.this_completed)
     
             self.filled_spaces += len(pset)  
-            if len(pset) != proposal.size:
-                print(proposal.id)
+            # if len(pset) != proposal.size:
+            #     print(proposal.id)
             
             piece_type = proposal.id[0:1]
             if piece_type == 'E':
@@ -188,10 +206,60 @@ class Board:
             elif piece_type == 'A':
                 self.score_breakdown[0] += proposal.score
                 
-            score_breakdown = [0,0,0]
-            potential_breakdown = [0,0,0,0,0]
+                
+            self.this_score = proposal.score
+             
+                
+            self.score = sum(self.score_breakdown)
+            self.potential_breakdown[0] += self.score
             
-            self.potential = sum(potential_breakdown)
+            grid = copy.deepcopy(self.state)
+            self.potential_breakdown[1] -= cpenalty(grid,self.state3)
+            
+            
+            
+            # Perhaps need to handle in player class
+            # if new_pieces + len(player.pieces) < 2:
+            #     this_score -= 100
+            
+            # potential_breakdown = [0,0,0,0,0]
+            # self.potential = sum(potential_breakdown)
+            
+        
+        self.visited = set()
+        
+        for row in range(self.nrow):
+            for col in range(self.ncol):
+                if self.state3[row][col]==0:
+                    self.visited.add((row,col))
+                    
+        groups = list()
+        visited = copy.deepcopy(self.visited)
+                    
+        # Empty spaces on the board represents possible spaces to expand
+        self.holes = []
+        holes2 = cats_score.connected_cells(self.state, self.visited, groups, 0)
+        for hole2 in holes2:
+            hole = [(y,x) for (x,y) in hole2]
+            self.holes.append(hole)
+            
+        hole_stats = [len(h) for h in self.holes]
+        
+        for h in hole_stats:
+            if h ==1:
+                self.potential_breakdown[4] -= 3
+            elif h ==2:
+                self.potential_breakdown[4] -= 1.5
+                
+        self.potential_breakdown[4] -= len(hole_stats)
+        self.potential = sum(self.potential_breakdown)
+        
+        # print('Hole stats:',player_id,[len(h) for h in self.holes])
+        # print('Board score',player_id,self.score,self.score_breakdown)
+        # print('Potential',player_id,self.potential,self.potential_breakdown)
+        
+        
+        
 
 
     # Check if the point (y, x) is within the board's bound
@@ -265,6 +333,7 @@ class Player:
         self.strategy = strategy # player's strategy
         self.board = board
         self.score = 0 # player's current score
+        self.hand_score = 0
         self.potential = 0
         self.score_breakdown = [0,0,0,0,0]
         self.is_blocked = False
@@ -286,13 +355,23 @@ class Player:
     def update_player(self):
         self.score_breakdown[1:3] = self.board.score_breakdown
         self.score = sum(self.score_breakdown)
-        self.potential = self.board.potential    
+        self.potential = self.board.potential  
+        # Adjusting the hand score and resetting so we don't do it again. Nicer way to do this?
+        self.hand_score -= self.board.this_score
+        self.board.this_score = 0
+        # print(self.potential)
+        if len(self.pieces) + sum(self.has_piece) < 2:
+            self.potential -= 100
         self.has_expansion = self.board.has_expansion
         self.has_piece = self.board.has_piece
+        # print('Piece counts:',self.piece_counts)
         # print('Filled spaces:',self.board.filled_spaces)
         if self.board.filled_spaces == 60:
             self.terminal = 1
             # print('Player',self.id, 'score:',self.score,self.score_breakdown)
+        
+
+    # def possible_moves_pruned(self,pieces,game):
         
 
     # Get a unique list of all possible placements
@@ -340,6 +419,16 @@ class Player:
             
         
         elif move_type == 'play_piece':
+            
+            visited = set()
+            pieces_unique = []
+            
+            for p in pieces:
+                if truncId(p) not in visited:
+                    visited.add(truncId(p))
+                    pieces_unique.append(p)
+            # print('Pruning:',len(pieces),len(pieces_unique))
+            
             locations = []
             t_counter = 0
             for i in range(self.board.ncol):
@@ -360,7 +449,7 @@ class Player:
             num = 0
             for cr in self.free_spaces:
                 # Check every available piece
-                for sh in pieces:
+                for sh in pieces_unique:
                     # Check every flip
                     for flip in ["h", "v"]:
                         # Check every rotation
@@ -479,8 +568,12 @@ class Blokus:
         
         this_piece = self.all_pieces[pindex].pop(0)
         self.piece_counts[pindex]-=1
+        # self.players[0].piece_counts[pindex]+=1
         # print(self.piece_counts)
         self.players[0].pieces.append(this_piece)
+        # Pieces in hand provides potential for later
+        self.players[0].hand_score += this_piece.score
+        # print('Hand score:',self.players[0].hand_score)
         self.pieces_display = [p[0][0] for p in zip(self.all_pieces,self.piece_counts) if p[1]>0]
 
     def remove_treasure(self, piece):
@@ -503,18 +596,18 @@ class Blokus:
         # print('Filled spaces:',self.players[0].board.filled_spaces, self.players[0].terminal)
             
 
-        if self.move_type == 'add_piece_forced':
-            dummy = 0
-        else:
-            #print(current.has_piece,sum(current.has_piece),current.has_expansion)
-            if current.has_expansion > 0:
-                self.move_type = 'expand_board'
-            elif sum(current.has_piece) > 0:
-                self.move_type = 'add_piece'
-            else:
-                self.move_type = 'play_piece'
+        # if self.move_type == 'add_piece_forced':
+        #     dummy = 0
+        # else:
+        #     #print(current.has_piece,sum(current.has_piece),current.has_expansion)
+        #     if current.has_expansion > 0:
+        #         self.move_type = 'expand_board'
+        #     elif sum(current.has_piece) > 0:
+        #         self.move_type = 'add_piece'
+        #     else:
+        #         self.move_type = 'play_piece'
                 
-        #print(self.move_type)
+        # print(self.move_type)
                 
         proposal = current.next_move(self); # get the next move based on
                                             # the player's strategy
@@ -529,7 +622,6 @@ class Blokus:
         
         elif self.move_type == 'expand_board':
             current.board.update(current.id,self.move_type, proposal,1)
-            current.board.has_expansion -= 1
             self.extra_grids[proposal[0]].pop(0)
             current.update_player();
             render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
@@ -556,8 +648,14 @@ class Blokus:
         else:
             current.passed = 1
             print('I should not be here...',self.move_type,current.has_piece,current.pieces)
+            # input("Press Enter to continue...")
                     
             # put the current player to the back of the queue
+
+        
+        # print('Stats before switching:',current.id,self.players,current.has_expansion,current.has_piece)
+        # print('Stats by player:',self.players[0].has_expansion,self.players[0].has_piece,self.players[1].has_expansion,self.players[1].has_piece)
+        # input("Press Enter to continue...")
 
         if current.has_expansion == 0 and sum(current.has_piece) == 0:
             if self.players[1].terminal == 0:
@@ -567,13 +665,10 @@ class Blokus:
                 self.players[0].terminal = 1
             
             nextp = self.players[0]
-            
+
             self.move_type = 'play_piece'
             pmoves = nextp.possible_moves(nextp.pieces, self)
-            # print(len(pmoves))
-            
-            # time.sleep(10)
-            
+            # print('Available moves:',len(pmoves))
             if len(pmoves)==0:
                 # print(nextp.pieces)
                 self.move_type = 'add_piece_forced'
@@ -581,38 +676,116 @@ class Blokus:
             else:
                 self.move_type = 'play_piece'
                 
-            self.rounds += 1; # update game round
-        
+        else:      
+            if current.has_expansion > 0:
+                self.move_type = 'expand_board'
+            elif sum(current.has_piece) > 0:
+                self.move_type = 'add_piece'
+            else:
+                print('To arrive here, player should have expansion or piece')
+                
+        self.rounds += 1; # update game round
+  
+        # print('Stats after switching:',current.id,current.has_expansion,current.has_piece)
+        # print('Stats by player:',self.players[0].has_expansion,self.players[0].has_piece,self.players[1].has_expansion,self.players[1].has_piece)
+        # input("Press Enter to continue...")
+        # print('---')
+        # time.sleep(1)
 
-    def make_move(self, move, state):
-        "Return a new BoardState reflecting move made from given board state."
-        # make a copy of the given state to be updated
+    def make_move(self,move,state):
+        
         newboard = copy.deepcopy(state)
-        # get current player
         current = newboard.to_move;
-        # update the board and the player status
-        newboard._board.update(current.id, move.points);
-        current.update_player(move, newboard._board);
-        current.remove_piece(move); # remove used piece
-        # put the current player to the back of the queue
-        first = newboard.game.players.pop(0);
-        newboard.game.players += [first];
-        newboard.game.rounds += 1; # update game round
-        # update newboard to_move
-        newboard.to_move = newboard.game.players[0]
+
+        proposal = move
+                                            
+        if newboard.game.move_type in ('add_piece','add_piece_forced'):
+            newboard.game.take_piece(proposal)
+            current.update_player();  
+        
+        elif newboard.game.move_type == 'expand_board':
+            current.board.update(current.id,newboard.game.move_type, proposal,1)
+            newboard.game.extra_grids[proposal[0]].pop(0)
+            current.update_player(); 
+                
+        elif proposal is not None: # if there a possible proposed move
+            color = proposal.color
+            # check if the move is valid
+            if self.valid_move(current, proposal.points):
+                # update the board and the player status
+                # print(time.time()-t)
+                current.board.update(current.id,newboard.game.move_type, proposal,1);
+                current.update_player();
+                current.remove_piece(proposal); # remove used piece
+                for i in range(current.board.this_completed):
+                    current.score_breakdown[0] += newboard.game.area_completion_bonus.pop(0)                  
+                # print(time.time()-t)
+
+            else: # end the game if an invalid move is proposed
+                raise Exception("Invalid move by player "+ str(current.id));
+                
+        else:
+            current.passed = 1
+            print('I should not be here...',self.move_type,current.has_piece,current.pieces)
+                    
+            # put the current player to the back of the queue
+
+        if current.has_expansion == 0 and sum(current.has_piece) == 0:
+            if newboard.game.players[1].terminal == 0:
+                first = newboard.game.players.pop(0);
+                newboard.game.players += [first];
+            else:
+                newboard.game.players[0].terminal = 1
+            
+            nextp = newboard.game.players[0]
+
+            newboard.game.move_type = 'play_piece'
+            pmoves = nextp.possible_moves(nextp.pieces, newboard.game)
+            # print('Available moves:',len(pmoves))
+            if len(pmoves)==0:
+                # print(nextp.pieces)
+                newboard.game.move_type = 'add_piece_forced'
+                newboard.game.players[0].has_piece = [1,0,0]
+            else:
+                newboard.game.move_type = 'play_piece'
+                
+        else:      
+            if current.has_expansion > 0:
+                newboard.game.move_type = 'expand_board'
+            elif sum(current.has_piece) > 0:
+                newboard.game.move_type = 'add_piece'
+            else:
+                print('To arrive here, player should have expansion or piece')
+            
         return newboard
+
 
     def successors(self, state):
         "Return a list of legal (move, state) pairs."
         # find and return up to MovesToConsider possible moves as successors
         m = [(move, self.make_move(move, state))
-                for move in state.to_move.plausible_moves(state.to_move.pieces, state.game, MovesToConsider, state.to_move.id)]
+                for move in state.to_move.possible_moves(state.to_move.pieces, state.game)]
+        # print('Possible moves',m)
+        
+        # print(len(m))
         return m
 
     def terminal_test(self, state):
         "Return True if this is a final state for the game."
         # if we have no moves left, it's effectively a final state
-        return not state.to_move.plausible_moves(state.to_move.pieces, state.game, 1, state.to_move.id)
+        if self.players[0].terminal == 1 and self.players[1].terminal == 1:
+            return True
+        else:
+            return False
+
+
+    def utility(self, state, actual_turn_number):
+        this_player = state.p1
+        opponent = state.p2
+        
+        total = state.p1.score + 0.8*state.p1.hand_score - state.p2.score - 0.8*state.p2.hand_score
+        
+        return total
 
 # This function will prompt the user for their piece
 def piece_prompt(options):
@@ -770,8 +943,6 @@ def Greedy_Player(player, game, oval = 1, single_option = 0):
         
     elif game.move_type == 'play_piece':
         options = [p for p in player.pieces];
-        
-        
         scores = []
         all_possibles = []
         debug = []
@@ -789,6 +960,7 @@ def Greedy_Player(player, game, oval = 1, single_option = 0):
             if len(possibles) != 0: # if there is possible moves
                 for m in range(len(possibles)):
                     this_score = 0
+                    new_pieces = 0
                     grid = copy.deepcopy(game.players[0].board.state)
                     grid3 = copy.deepcopy(game.players[0].board.state4)
                     # Should make a copy of the state and use the update function instead
@@ -796,8 +968,11 @@ def Greedy_Player(player, game, oval = 1, single_option = 0):
                         grid[p1][p0]=1
                         if grid3[p1][p0]<10:
                             this_score += 2*grid3[p1][p0]
+                            new_pieces +=1
                         elif grid3[p1][p0]==10:
-                            this_score += 5 
+                            this_score += 5
+                    if new_pieces + len(player.pieces) < 2:
+                        this_score -= 100
                     this_score += possibles[m].score-cpenalty(grid,grid2)
                     # debug.append(fam_dummy)
                     scores.append(this_score)
@@ -821,6 +996,252 @@ def Greedy_Player(player, game, oval = 1, single_option = 0):
         else:
             print('No possible options')
             return None; # no possible move left
+
+
+
+# Greedy Strategy: choose an available piece randomly based on own board only
+def Winnie(player, game, oval = 1):
+    
+    # Move selection logic, could also be used for move ranking in search
+    # Player prefers pieces that have higher point value, but does not want repeat pieces (mainly relevant for corner and straight pieces)
+    
+    if game.move_type in (['add_piece','add_piece_forced']):
+        dummy = 0
+        possibles = player.possible_moves(dummy, game);
+        
+        scores = []
+        mcounts = []
+        
+        in_stock = 0
+        for p in possibles:
+            for i in range(len(player.pieces)):
+                pid1 = game.all_pieces[p][0].id
+                pid2 = player.pieces[i].id
+                if pid1 == pid2 or pid1[:-1] == pid2[:-1]:
+                    in_stock += 1
+            
+            mcount =len(player.possible_moves([game.all_pieces[p][0]],game,1))
+            if mcount ==0:
+                adj = 0
+            else:
+                adj = 1
+            mcounts.append(mcount)
+            # if in_stock > 0:
+            #     print(in_stock,'already in stock!')
+            scores.append(adj*game.all_pieces[p][0].score+adj*game.all_pieces[p][0].size-0.5*in_stock)
+         
+        # print('Move counts:', mcounts)
+        max_index,max_score = getMax(possibles,scores)
+        
+        # print('Scores by piece:',scores,max_index,max_score,possibles[max_index])
+        # The heuristic makes sense, but player ends up with holes that cannot be filled. Just picking the top index gets more square pieces
+        return possibles[max_index]
+        # return max(possibles)
+
+    elif game.move_type == 'expand_board':
+        dummy = 0
+        possibles = player.possible_moves(dummy, game);
+        
+        scores = []
+        all_possibles = []
+        
+        for m in possibles:
+            player_copy = copy.deepcopy(game.players[0])
+            player_copy.board.update(player.id,game.move_type,m)   
+            player_copy.update_player()
+            this_score = player_copy.potential
+            # Pieces that are more valuable for the opponent more likely to be considered
+            # But the player does not need to worry about where they are placed since board are indpendent
+            scores.append(this_score)
+            all_possibles.append(m)  
+        
+        if len(all_possibles)>0:
+            max_index,max_score = getMax(all_possibles,scores)
+            
+        return all_possibles[max_index]
+        
+        # this_choice = random.choice(possibles)
+        # return this_choice
+        
+    elif game.move_type == 'play_piece':
+        options = [p for p in player.pieces];
+        # print('Piece ids:', [p.id for p in options])
+        scores = []
+        all_possibles = []
+        debug = []
+        
+        # print('Pieces in hand:', options)
+        
+        for piece in options:
+            # print('Piece:', piece)
+            possibles = player.possible_moves([piece], game);
+            # print(len(possibles))
+            if len(possibles) != 0: # if there is possible moves
+                for m in possibles:
+                    player_copy = copy.deepcopy(game.players[0])
+                    player_copy.board.update(player.id,game.move_type,m)   
+                    player_copy.update_player()
+                    this_score = player_copy.potential
+                    # Pieces that are more valuable for the opponent more likely to be considered
+                    # But the player does not need to worry about where they are placed since board are indpendent
+                    scores.append(this_score)
+                    all_possibles.append(m)            
+    
+            # else: # no possible move for that piece
+            #     options.remove(piece); # remove it from the options
+                
+            
+        if len(all_possibles)>0:
+            max_index,max_score = getMax(all_possibles,scores)
+        
+            # print(all_possibles[max_index].id)
+            return all_possibles[max_index]
+        else:
+            print('No possible options')
+            return None; # no possible move left
+
+
+def Paddington(player, game, oval = 1):
+    # track start time for use in post-game move time analysis     
+    if game.rounds<50:
+        return Winnie(player,game,1)   
+
+    
+    start_time = time.time()
+    turn_number = 1
+    
+    # if no possible moves in this state, return None
+    # plausible_moves returns a possible move (if any) faster than possble_moves
+    
+    possibles = player.possible_moves(player.pieces, game);
+
+    game_copy = copy.deepcopy(game)
+    state = BoardState(game_copy)
+    
+    #print(state.game.successors(state))
+    # perform alphabeta search and return a useful move
+    this_move = alphabeta_search(state, Depth, None, None, start_time, turn_number)
+    
+    return this_move
+    
+    #time.sleep(100)
+
+# AI implementation, taken from mancala.py
+
+def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None, turn_number=None):
+    """Search game to determine best action; use alpha-beta pruning.
+    This version cuts off search and uses an evaluation function."""
+    global count
+    global testing
+    global BigInitialValue
+    global MoveTimes
+    
+    testing = False
+
+    print('Starting search',d)
+
+    player = state.to_move
+    if state.to_move.id == 1:
+        flip = 1
+    else:
+        flip = -1
+    count = 0
+
+    def max_value(state, alpha, beta, depth):
+        global count, testing
+        if testing:
+            print("  "* depth, "Max  alpha: ", alpha, " beta: ", beta, " depth: ", depth)
+        if cutoff_test(state, depth):
+            if testing:
+                print("  "* depth, "Max cutoff returning ", eval_fn(state))
+            return eval_fn(state)
+        v = -BigInitialValue
+        succ = state.game.successors(state)
+        count = count + len(succ)
+        if testing:
+            print("  "*depth, "maxDepth: ", depth, "Total:", count, "Successors: ", len(succ))
+        for (a, s) in succ:
+            # Decide whether to call max_value or min_value, depending on whose move it is next.
+            # A player can move repeatedly if opponent is completely blocked
+            if state.to_move == s.to_move:
+                v = max(v, max_value(s, alpha, beta, depth))
+            else:
+                v = max(v, min_value(s, alpha, beta, depth+1))
+            if testing:
+                print("  "* depth, "max best value:", v)
+            if v >= beta:
+                return v
+            alpha = max(alpha, v)
+        return v
+
+    def min_value(state, alpha, beta, depth):
+        global count
+        if testing:
+            print("  "*depth, "Min  alpha: ", alpha, " beta: ", beta, " depth: ", depth)
+        if cutoff_test(state, depth):
+            if testing:
+                print("  "*depth, "Min cutoff returning ", eval_fn(state))
+            return eval_fn(state)
+        v = BigInitialValue
+        succ = state.game.successors(state)
+        count = count + len(succ)
+        if testing:
+            print("  "*depth, "minDepth: ", depth, "Total:", count, "Successors: ", len(succ))
+        for (a, s) in succ:
+            # Decide whether to call max_value or min_value, depending on whose move it is next.
+            # A player can move repeatedly if opponent is completely blocked
+            if state.to_move == s.to_move:
+                v = min(v, min_value(s, alpha, beta, depth))
+            else:
+                v = min(v, max_value(s, alpha, beta, depth+1))
+            if testing:
+                print("  "*depth, "min best value:", v)
+            if v <= alpha:
+                return v
+            beta = min(beta, v)
+        return v
+
+    def right_value(s, alpha, beta, depth):
+        if s.to_move.id == state.to_move.id:
+            return max_value(s, -BigInitialValue, BigInitialValue, 0)
+        else:
+            return min_value(s, -BigInitialValue, BigInitialValue, 0)
+
+    def argmin(seq, fn):
+        """Return an element with lowest fn(seq[i]) score; tie goes to first one.
+        >>> argmin(['one', 'to', 'three'], len)
+        'to'
+        """
+        # print(seq)        
+        
+        best = seq[0]; best_score = fn(best)
+        # print(best,best_score)
+        for x in seq:
+            x_score = fn(x)
+            if x_score < best_score:
+                best, best_score = x, x_score
+        return best
+
+    def argmax(seq, fn):
+        """Return an element with highest fn(seq[i]) score; tie goes to first one.
+        >>> argmax(['one', 'to', 'three'], len)
+        'three'
+        """
+        return argmin(seq, lambda x: -fn(x))
+
+    # Body of alphabeta_search starts here:
+    cutoff_test = (cutoff_test or
+                   (lambda state,depth: depth>d or state.game.terminal_test(state)))
+    eval_fn = eval_fn or (lambda state: flip*state.game.utility(state, turn_number))
+    action, state = argmax(state.game.successors(state),
+                            lambda a_s: right_value(a_s[1], -BigInitialValue, BigInitialValue, 0))
+
+    print('Total nodes evaluated:', count)
+
+    # calculate move time, round to 2 decimal places, store for analysis
+    MoveTimes.append(round(time.time() - start_time, 2))
+    return action
+
 
 
 def getMax(candidates,scores):  
@@ -876,28 +1297,33 @@ class BoardState:
         self.p2 = [p for p in game.players if p.id == 2][0]
         # to_move keeps track of the player whose turn it is to move
         self.to_move = game.players[0]
-        self._board = game.board
+        # self._board = game.board
 
 # Play a round of blokus (all players move), then print board.
 def play_blokus(blokus):
-    # Make one premature call to blokus.play(), initializes board.
-    blokus.play();
-    
+    # Make one premature call to blokus.play(), initializes board.    
     a=0
     s=0
     e=0
+    c=0
+    d=0
     
     while e<2:
-        old_s = s
-        s = 0
-        blokus.play()
-        # for player in blokus.players:
-        #     s+= player.potential
-        # print(blokus.day,len(blokus.pieces))
         
+        blokus.play()     
         if blokus.players[0].terminal + blokus.players[1].terminal == 2:
             e =2
         
+        c = blokus.players[0].board.addon_value
+        
+        current = blokus.players[0]
+        
+        # print("Player 1 score: "+ str(current.score), current.score_breakdown, current.hand_score);
+        
+        # if c==4 and blokus.move_type=='play_piece' and d==0:
+        #     input("Press Enter to continue...")
+        #     d=1
+        # time.sleep(1)
         time.sleep(TS)
 
 # Run a blokus game with two players.
@@ -1075,8 +1501,8 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    Games = 20
-    multi_run(Games, Greedy_Player, Greedy_Player);
+    Games = 100
+    multi_run(Games, Paddington, Winnie);
 
 if __name__ == '__main__':
     main();

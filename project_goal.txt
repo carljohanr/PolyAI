@@ -28,7 +28,7 @@ Games to be supported by V1:
     1. Polyssimo Challenge [implemented]    
     2. Isle of Cats [implemented]
     3. Patchwork [implemented]
-    4. Barenpark
+    4. Barenpark [implemented]
     5. Kingdomino    
     6. Llamaland
     7. Tetris Go

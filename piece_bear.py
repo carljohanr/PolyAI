@@ -136,7 +136,7 @@ class A1(Piece):
         self.color=2
         self.animal = 'Koala'
         self.score = score
-        self.id = 'A1';
+        self.id = 'A1'+str(self.score);
         
     def set_points(self, x, y):
         self.points = [(x, y),(x,y+1),(x+1,y),(x+2,y)];
@@ -148,7 +148,7 @@ class A2(Piece):
         self.color=3
         self.animal = 'Panda'
         self.score = score
-        self.id = 'A2';
+        self.id = 'A2'+str(self.score);
         
     def set_points(self, x, y):
         self.points = [(x, y),(x,y+1),(x+1,y+1),(x+1,y+2)];
@@ -161,7 +161,7 @@ class A3(Piece):
         self.color=4
         self.animal = 'Polar'
         self.score = score
-        self.id = 'A3';
+        self.id = 'A3'+str(self.score);
         
     def set_points(self, x, y):
         self.points = [(x, y),(x,y+1),(x+1,y+1),(x,y+2)];
@@ -173,7 +173,7 @@ class A4(Piece):
         self.color=5
         self.animal = 'Gobi'
         self.score = score
-        self.id = 'A3';
+        self.id = 'A4'+str(self.score);
         
     def set_points(self, x, y):
         self.points = [(x, y),(x,y+1),(x+1,y+1),(x+1,y)];

@@ -27,6 +27,8 @@ four_directions = [[0,1],[0,-1],[1,0],[-1,0]]
 
 def cpenalty(grid,grid3):
     
+    # Correct to give penalty for empty spaces on the side (perhaps pad first)
+    
     cpenalty = 0
     
     for  i in range(len(grid)):

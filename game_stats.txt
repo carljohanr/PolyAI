@@ -155,7 +155,7 @@ Average Score P2:     25.0
 
 ================== STATISTICS ACROSS ALL GAMES ==================
 
-Pathy (Depth 6) vs Greedy v2
+Patchy (Depth 6) vs Greedy v2
 
 Games Played:       100
 Games Won:          71
@@ -165,4 +165,37 @@ Win Rate:          71.0%
 
 Average Score P1:     25.6
 Average Score P2:     16.0
+
+
+
+Barenpark
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Paddington vs Greedy
+
+Games Played:       200
+Games Won:          112
+Games Lost:         83
+Games Tied:         5
+Win Rate:          56.0%
+
+Average Score P1:     72.5
+Average Score P2:     70.7
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Paddington (v2) vs Greedy
+
+Games Played:       100
+Games Won:          93
+Games Lost:         6
+Games Tied:         1
+Win Rate:          93.0%
+
+Average Score P1:     84.5
+Average Score P2:     57.2
+
+
 
