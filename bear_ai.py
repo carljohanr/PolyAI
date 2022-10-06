@@ -27,7 +27,7 @@ from bear_score import cpenalty
 # from cats_score import score_board_0
 
 # cutoff depth for alphabeta minimax search (default 2)
-Depth = 2
+Depth = 1
 # number of successor states returned (default 4)
 # MovesToConsider = 4
 # change to adjust the number of games played (defualt 10)
@@ -188,7 +188,7 @@ class Board:
                             self.potential_breakdown[2] += 2*rval[this_resource-1]
                         # Can only expand 3 times. Should probably handle this elsewhere.
                         elif this_resource == 10 and self.has_expansion + self.addon_value < 4:
-                            self.resource_value += 3
+                            self.resource_value += 2
                             self.potential_breakdown[3] += 5
                             self.has_expansion += 1
                         this_room = self.state3[row][col]
@@ -408,7 +408,7 @@ class Player:
             for i in range(max_index):
                 if game.piece_counts[i] > 0 and game.move_type == 'add_piece' and (simplified==0 or i>=min_index):
                     options.append(i)
-                elif game.piece_counts[i] > 0 and len(self.possible_moves([game.all_pieces[i][0]],game,1))>0:
+                elif move_type == 'add_piece_forced' and game.piece_counts[i] > 0 and len(self.possible_moves([game.all_pieces[i][0]],game,1))>0:
                     # print(move_type,i)
                     options.append(i)
                     
@@ -696,6 +696,7 @@ class Blokus:
 
     def make_move(self,move,state):
         
+        
         newboard = copy.deepcopy(state)
         current = newboard.to_move;
 
@@ -738,10 +739,10 @@ class Blokus:
             # else:
             #     newboard.game.players[0].terminal = 1
             
-            nextp = newboard.game.players[0]
+            #nextp = newboard.game.players[0]
 
             newboard.game.move_type = 'play_piece'
-            pmoves = nextp.possible_moves(nextp.pieces, newboard.game)
+            pmoves = current.possible_moves(current.pieces, newboard.game)
             # print('Available moves:',len(pmoves))
             if len(pmoves)==0:
                 # print(nextp.pieces)
@@ -768,6 +769,7 @@ class Blokus:
         m = [(move, self.make_move(move, state))
                 for move in state.to_move.possible_moves(state.to_move.pieces, state.game,0,1)]
         
+        # Pruning to 5 options to make the search space smaller - doesn't work well with or without pruning
         if state.game.move_type == 'play_piece':
             u = []     
             for mm in m:
@@ -777,19 +779,24 @@ class Blokus:
             new_m = []
             # Addition of two list in one dictionary
             f_1 = {m[i]: u[i] for i in range(len(m))}
-             
             # sorting of dictionary based on value
-            f_lst = {k: v for k, v in sorted(f_1.items(), key=lambda item: item[1])}
+            f_lst = {k: v for k, v in sorted(f_1.items(), key=lambda item: -item[1])}
              
             # Element addition in the list
             for i in f_lst.keys():
                 new_m.append(i)
+            m = new_m[0:3]
             
-            m = new_m[0:5]
+            
+            # print([mm[0].points for mm in m])
+            # time.sleep(10)
         
-        # print('Possible moves',m)
+        print('Possible moves:',len(m))
         
         # print(len(m))
+        
+        
+        
         return m
 
     def terminal_test(self, state):
@@ -808,8 +815,8 @@ class Blokus:
         # total = state.p1.score + 0.8*state.p1.hand_score + state.p1.board.potential_breakdown[4] + state.p1.board.potential_breakdown[1] + \
             # state.p1.board.filled_spaces + sum([p.size for p in state.p1.pieces])
             
-        total = state.p1.board.resource_value 
-        # + 0.5 * state.p1.board.filled_spaces + sum([p.size for p in state.p1.pieces])
+        total = state.p1.board.resource_value + 0.5 * state.p1.board.filled_spaces + sum([p.size for p in state.p1.pieces])
+        + state.p1.board.potential_breakdown[4] + state.p1.board.potential_breakdown[1]
         # print(state.game.move_type,state.p1.pieces,total)
         
         return total
@@ -1154,7 +1161,7 @@ def Paddington(player, game, oval = 1):
     
     #print(state.game.successors(state))
     # perform alphabeta search and return a useful move
-    this_move = alphabeta_search(state, Depth, None, None, start_time, turn_number)
+    this_move = simple_search(state, Depth, None, None, start_time, turn_number)
     
     # print(this_move.id,this_move.points)
     
@@ -1166,7 +1173,89 @@ def Paddington(player, game, oval = 1):
 
 def simple_search(state, d=1, cutoff_test = None, eval_fn = None, start_time = None, turn_number = None):
     
-    return 0
+    """Search game to determine best action; use alpha-beta pruning.
+    This version cuts off search and uses an evaluation function."""
+    global count
+    global testing
+    global BigInitialValue
+    global MoveTimes
+    
+    testing = False
+
+    print('Starting search',d)
+
+    player = state.to_move
+    if state.to_move.id == 1:
+        flip = 1
+    else:
+        flip = -1
+    count = 0
+
+    def max_value(state, alpha, beta, depth):
+        global count, testing
+        if testing:
+            print("  "* depth, "Max  alpha: ", alpha, " beta: ", beta, " depth: ", depth)
+        if cutoff_test(state, depth):
+            if testing:
+                print("  "* depth, "Max cutoff returning ", eval_fn(state))
+            return eval_fn(state)
+        v = -BigInitialValue
+        succ = state.game.successors(state)
+        count = count + len(succ)
+        if testing:
+            print("  "*depth, "maxDepth: ", depth, "Total:", count, "Successors: ", len(succ))
+        for (a, s) in succ:
+            # Decide whether to call max_value or min_value, depending on whose move it is next.
+            # A player can move repeatedly if opponent is completely blocked
+            if state.to_move.id == s.to_move.id:
+                v = max(v, max_value(s, alpha, beta, depth+1))
+            else:
+                print(state.to_move.id,s.to_move.id,state.to_move,s.to_move)
+            if testing:
+                print("  "* depth, "max best value:", v)
+            if v >= beta:
+                return v
+            alpha = max(alpha, v)
+            
+        return v
+
+    def right_value(s, alpha, beta, depth):
+        return max_value(s, -BigInitialValue, BigInitialValue, 0)
+
+    def argmin(seq, fn):
+        """Return an element with lowest fn(seq[i]) score; tie goes to first one.
+        >>> argmin(['one', 'to', 'three'], len)
+        'to'
+        """
+        # print(seq)        
+        
+        best = seq[0]; best_score = fn(best)
+        # print(best,best_score)
+        for x in seq:
+            x_score = fn(x)
+            if x_score < best_score:
+                best, best_score = x, x_score
+        return best
+
+    def argmax(seq, fn):
+        """Return an element with highest fn(seq[i]) score; tie goes to first one.
+        >>> argmax(['one', 'to', 'three'], len)
+        'three'
+        """
+        return argmin(seq, lambda x: -fn(x))
+
+    # Body of alphabeta_search starts here:
+    cutoff_test = (cutoff_test or
+                   (lambda state,depth: depth>d or state.game.terminal_test(state)))
+    eval_fn = eval_fn or (lambda state: flip*state.game.utility(state, turn_number))
+    action, state = argmax(state.game.successors(state),
+                            lambda a_s: right_value(a_s[1], -BigInitialValue, BigInitialValue, 0))
+
+    print('Total nodes evaluated:', count)
+
+    # calculate move time, round to 2 decimal places, store for analysis
+    MoveTimes.append(round(time.time() - start_time, 2))
+    return action
 
 def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None, turn_number=None):
     """Search game to determine best action; use alpha-beta pruning.
@@ -1551,7 +1640,7 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    Games = 1
+    Games = 10
     multi_run(Games, Paddington, Winnie);
 
 if __name__ == '__main__':

@@ -51,6 +51,7 @@ References:
 - https://github.com/pbsinclair42/MCTS/ (MCTS reference implementation)
 - https://github.com/DenseLance/mcts-simple (Alternative MCTS package)
 - https://github.com/ai-boson/mcts MCTS description with python implementation
+- https://csfjournal.com/volume-4-issue-1-1/2021/9/24/reinforcement-learning-for-constraint-satisfaction-game-agents-15-puzzle-minesweeper-2048-and-sudoku
 
 
 Frameworks inspired by Alphago Zero
