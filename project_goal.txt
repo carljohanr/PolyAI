@@ -57,6 +57,13 @@ Frameworks inspired by Alphago Zero
 - https://github.com/richemslie/galvanise_zero
 - https://github.com/facebookarchive/Polygames
 
+
+Polyomino tiling/fitting:
+
+- https://stackoverflow.com/questions/59725560/finding-all-the-combinations-of-free-polyominoes-within-a-specific-area-with-a-s
+- https://stackoverflow.com/questions/60618751/understanding-the-input-format-of-minizincs-geost-constraint
+- https://www.minizinc.org/software.html
+
 ----------------
 
 9/27 project log

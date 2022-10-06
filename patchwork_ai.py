@@ -27,7 +27,7 @@ import random
 import grids
 
 # cutoff depth for alphabeta minimax search (default 2)
-Depth = 6
+Depth = 4
 # number of successor states returned (default 4)
 MovesToConsider = 4
 # change to adjust the number of games played (defualt 10)
@@ -1295,8 +1295,8 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    Games = 100
-    multi_run(Games, Human_Player, Greedy_Player);
+    Games = 10
+    multi_run(Games, Patchy, Greedy_Player);
     # multi_run(Games, Greedy_Player, Random_Player);
 
 if __name__ == '__main__':
