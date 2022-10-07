@@ -27,7 +27,7 @@ from bear_score import cpenalty
 # from cats_score import score_board_0
 
 # cutoff depth for alphabeta minimax search (default 2)
-Depth = 1
+Depth = 15
 # number of successor states returned (default 4)
 # MovesToConsider = 4
 # change to adjust the number of games played (defualt 10)
@@ -175,25 +175,25 @@ class Board:
             #print(self.state)
             #print(self.state2)
             maxval = max([max(s) for s in self.state2])
-            for row in range(self.nrow):
-                for col in range(self.ncol):
-                    if(col, row) in placement:
-                        self.state[row][col] = color;
-                        self.state2[row][col] = maxval+1
-                        this_resource = self.state4[row][col]
-                        if this_resource in [1,2,3]:
-                            rval = [0.5,2,2]
-                            self.resource_value += 2*rval[this_resource-1]
-                            self.has_piece[this_resource-1] += 1
-                            self.potential_breakdown[2] += 2*rval[this_resource-1]
-                        # Can only expand 3 times. Should probably handle this elsewhere.
-                        elif this_resource == 10 and self.has_expansion + self.addon_value < 4:
-                            self.resource_value += 2
-                            self.potential_breakdown[3] += 5
-                            self.has_expansion += 1
-                        this_room = self.state3[row][col]
-                        if this_room>0:
-                            self.park_spaces_covered[this_room-1] +=1
+            # for row in range(self.nrow):
+            #     for col in range(self.ncol):
+            for (col, row) in placement:
+                self.state[row][col] = color;
+                self.state2[row][col] = maxval+1
+                this_resource = self.state4[row][col]
+                if this_resource in [1,2,3]:
+                    rval = [0.5,3,2]
+                    self.resource_value += 2*rval[this_resource-1]
+                    self.has_piece[this_resource-1] += 1
+                    self.potential_breakdown[2] += 2*rval[this_resource-1]
+                # Can only expand 3 times. Should probably handle this elsewhere.
+                elif this_resource == 10 and self.has_expansion + self.addon_value < 4:
+                    self.resource_value += 2
+                    self.potential_breakdown[3] += 5
+                    self.has_expansion += 1
+                this_room = self.state3[row][col]
+                if this_room>0:
+                    self.park_spaces_covered[this_room-1] +=1
             
            
             self.this_completed = sum([1 for a in zip(self.park_spaces_covered,old_spaces_covered) if a[0]==15 and a[0]-a[1]>0])
@@ -260,15 +260,13 @@ class Board:
                 self.potential_breakdown[4] -= 1.5
                 
         self.potential_breakdown[4] -= len(hole_stats)
+        
         self.potential = sum(self.potential_breakdown)
         
         # print('Hole stats:',player_id,[len(h) for h in self.holes])
         # print('Board score',player_id,self.score,self.score_breakdown)
         # print('Potential',player_id,self.potential,self.potential_breakdown)
         
-        
-        
-
 
     # Check if the point (y, x) is within the board's bound
     def in_bounds(self, point):
@@ -364,8 +362,11 @@ class Player:
         self.score_breakdown[1:3] = self.board.score_breakdown
         self.score = sum(self.score_breakdown)
         self.potential = self.board.potential  
+        
         # Adjusting the hand score and resetting so we don't do it again. Nicer way to do this?
         self.hand_score -= self.board.this_score
+        
+        
         self.board.this_score = 0
         # print(self.potential)
         if len(self.pieces) + sum(self.has_piece) < 2:
@@ -408,9 +409,13 @@ class Player:
             for i in range(max_index):
                 if game.piece_counts[i] > 0 and game.move_type == 'add_piece' and (simplified==0 or i>=min_index):
                     options.append(i)
-                elif move_type == 'add_piece_forced' and game.piece_counts[i] > 0 and len(self.possible_moves([game.all_pieces[i][0]],game,1))>0:
+                elif move_type == 'add_piece_forced' and game.piece_counts[i] > 0: #and len(self.possible_moves([game.all_pieces[i][0]],game,1))>0:
                     # print(move_type,i)
                     options.append(i)
+                    
+            if len(options) == 0:
+                print('Its pretty empty here!')
+                options.append(0)
                     
             return options
         
@@ -481,7 +486,52 @@ class Player:
             # print(t_counter)
             return placements;
         
+     
+    def getAllMax(self,list1,rank_list):
+        
+        result = []
+        
+        m = max(rank_list)
+        for i in range(len(rank_list)):
+            if rank_list[i]==m:
+                result.append(list1[i])
+        
+        return result
             
+     
+    def possible_moves_pruned(self,pieces, game,override = 0,simplified = 0):
+        
+        candidate_moves = self.possible_moves(pieces,game,override,simplified)
+        
+        if game.move_type == 'add_piece':
+            if max(candidate_moves)<=3:
+                if candidate_moves == [2,3]:
+                    #print('Common')
+                    piece_counts = game.players[0].piece_counts
+                    if piece_counts[3] > piece_counts[2]:
+                        candidate_moves = [2]
+                    else:
+                        candidate_moves = [3]
+                #print(candidate_moves,game.players[0].piece_counts)
+            elif 4<=max(candidate_moves)<=7:
+                # print(candidate_moves)
+                rank_list=[game.all_pieces[i][0].score for i in candidate_moves]
+                candidate_moves = self.getAllMax(candidate_moves,rank_list)
+                # print(candidate_moves)
+            else:
+                # print('Candidates',candidate_moves)
+                rank_list = [8,9,16,19,11,14,17,12,10,15,13,18]
+                new_candidates = []
+                for i in range(len(rank_list)):
+                    if rank_list[i] in candidate_moves and len(new_candidates)<4:
+                        new_candidates.append(rank_list[i])
+                    elif len(new_candidates)>=4:
+                        break
+                # print('New candidates',new_candidates)
+                candidate_moves = new_candidates
+            
+        return candidate_moves
+        
 
 
     def plausible_moves(self, pieces, game, cutoff, pid):
@@ -540,8 +590,10 @@ class Blokus:
         # print(self.rounds,len(self.all_pieces))
         this_piece = self.all_pieces[0].pop(0)
         self.players[0].pieces.append(this_piece)
+        self.players[0].piece_counts[0] += 1
         this_piece = self.all_pieces[1].pop(0)
-        self.players[1].pieces.append(this_piece)            
+        self.players[1].pieces.append(this_piece)
+        self.players[0].piece_counts[1] += 1            
             
         self.piece_counts = [len(a) for a in all_pieces]
         # self.piece_counts = [50,12,8,8,3,3,3,3,1,1,1,1,1,1,1,1,1,1,1,1]
@@ -581,7 +633,7 @@ class Blokus:
         
         this_piece = self.all_pieces[pindex].pop(0)
         self.piece_counts[pindex]-=1
-        # self.players[0].piece_counts[pindex]+=1
+        self.players[0].piece_counts[pindex]+=1
         # print(self.piece_counts)
         self.players[0].pieces.append(this_piece)
         # Pieces in hand provides potential for later
@@ -634,10 +686,12 @@ class Blokus:
                 # update the board and the player status
                 # print(time.time()-t)
                 current.board.update(current.id,self.move_type, proposal,1);
-                current.update_player();
                 current.remove_piece(proposal); # remove used piece
+                this_pindex = self.piece_ids.index(truncId(proposal))
+                current.piece_counts[this_pindex] -= 1
                 for i in range(current.board.this_completed):
                     current.score_breakdown[0] += self.area_completion_bonus.pop(0)
+                current.update_player();
                 render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
                        [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],firstp.pieces,secondp.pieces,self.pieces_display)                     
                 # print(time.time()-t)
@@ -717,11 +771,13 @@ class Blokus:
                 # update the board and the player status
                 # print(time.time()-t)
                 current.board.update(current.id,newboard.game.move_type, proposal,1);
-                current.update_player();
                 current.remove_piece(proposal); # remove used piece
+                this_pindex = newboard.game.piece_ids.index(truncId(proposal))
+                current.piece_counts[this_pindex] -= 1
                 for i in range(current.board.this_completed):
                     current.score_breakdown[0] += newboard.game.area_completion_bonus.pop(0)                  
                 # print(time.time()-t)
+                current.update_player();
 
             else: # end the game if an invalid move is proposed
                 raise Exception("Invalid move by player "+ str(current.id));
@@ -766,14 +822,19 @@ class Blokus:
         "Return a list of legal (move, state) pairs."
         # find and return up to MovesToConsider possible moves as successors
         
+    
         m = [(move, self.make_move(move, state))
-                for move in state.to_move.possible_moves(state.to_move.pieces, state.game,0,1)]
+                for move in state.to_move.possible_moves_pruned(state.to_move.pieces, state.game,0,1)]
         
         # Pruning to 5 options to make the search space smaller - doesn't work well with or without pruning
+        
+        game_progress = state.to_move.board.piece_count
+        
+        # Sort moves by utility, for pruning the search tree. But requires playing the moves first.
         if state.game.move_type == 'play_piece':
             u = []     
             for mm in m:
-                u.append(self.utility(mm[1],0))
+                u.append(self.utility(mm[1],game_progress))
             f_1 = {}         
             # initializing blank list
             new_m = []
@@ -785,13 +846,17 @@ class Blokus:
             # Element addition in the list
             for i in f_lst.keys():
                 new_m.append(i)
-            m = new_m[0:3]
+            m = new_m[0:2]
+        else:
+            m = m[0:4]
             
+            
+
             
             # print([mm[0].points for mm in m])
             # time.sleep(10)
         
-        print('Possible moves:',len(m))
+        #print('Possible moves:',len(m))
         
         # print(len(m))
         
@@ -808,15 +873,22 @@ class Blokus:
             return False
 
 
-    def utility(self, state, actual_turn_number):
+    def utility(self, state, progress):
         this_player = state.p1
         opponent = state.p2
         
         # total = state.p1.score + 0.8*state.p1.hand_score + state.p1.board.potential_breakdown[4] + state.p1.board.potential_breakdown[1] + \
             # state.p1.board.filled_spaces + sum([p.size for p in state.p1.pieces])
+        
             
-        total = state.p1.board.resource_value + 0.5 * state.p1.board.filled_spaces + sum([p.size for p in state.p1.pieces])
-        + state.p1.board.potential_breakdown[4] + state.p1.board.potential_breakdown[1]
+        total_breakdown = [(0.8-progress*0.05)*state.p1.hand_score,state.p1.score-0.3*state.p1.score_breakdown[0],sum([p.size for p in state.p1.pieces]),\
+                           state.p1.board.potential_breakdown[1],state.p1.board.potential_breakdown[4],0.75*state.p1.board.resource_value]
+            
+        #total_breakdown[5] = 0
+            
+        #print(total_breakdown)
+        
+        total = sum(total_breakdown)
         # print(state.game.move_type,state.p1.pieces,total)
         
         return total
@@ -1141,27 +1213,15 @@ def Winnie(player, game, oval = 1):
 
 def Paddington(player, game, oval = 1):
     # track start time for use in post-game move time analysis     
-    if player.board.piece_count>5:
+    if player.board.piece_count>10: #or game.move_type !='play_piece':
         return Winnie(player,game,1)   
 
-    
     start_time = time.time()
     turn_number = 1
-    
-    # if no possible moves in this state, return None
-    # plausible_moves returns a possible move (if any) faster than possble_moves
-    
-    possibles = player.possible_moves(player.pieces, game);
 
     game_copy = copy.deepcopy(game)
     state = BoardState(game_copy)
-    
-    print ("#moves:",len(state.game.successors(state)),state.game.utility(state,0))
-    
-    
-    #print(state.game.successors(state))
-    # perform alphabeta search and return a useful move
-    this_move = simple_search(state, Depth, None, None, start_time, turn_number)
+    this_move = alphabeta_search(state, Depth, None, None, start_time, state.to_move.board.piece_count)
     
     # print(this_move.id,this_move.points)
     
@@ -1170,93 +1230,6 @@ def Paddington(player, game, oval = 1):
     #time.sleep(100)
 
 # AI implementation, taken from mancala.py
-
-def simple_search(state, d=1, cutoff_test = None, eval_fn = None, start_time = None, turn_number = None):
-    
-    """Search game to determine best action; use alpha-beta pruning.
-    This version cuts off search and uses an evaluation function."""
-    global count
-    global testing
-    global BigInitialValue
-    global MoveTimes
-    
-    testing = False
-
-    print('Starting search',d)
-
-    player = state.to_move
-    if state.to_move.id == 1:
-        flip = 1
-    else:
-        flip = -1
-    count = 0
-
-    def max_value(state, alpha, beta, depth):
-        global count, testing
-        if testing:
-            print("  "* depth, "Max  alpha: ", alpha, " beta: ", beta, " depth: ", depth)
-        if cutoff_test(state, depth):
-            if testing:
-                print("  "* depth, "Max cutoff returning ", eval_fn(state))
-            return eval_fn(state)
-        v = -BigInitialValue
-        succ = state.game.successors(state)
-        count = count + len(succ)
-        if testing:
-            print("  "*depth, "maxDepth: ", depth, "Total:", count, "Successors: ", len(succ))
-        for (a, s) in succ:
-            # Decide whether to call max_value or min_value, depending on whose move it is next.
-            # A player can move repeatedly if opponent is completely blocked
-            if state.to_move.id == s.to_move.id:
-                v = max(v, max_value(s, alpha, beta, depth+1))
-            else:
-                print(state.to_move.id,s.to_move.id,state.to_move,s.to_move)
-            if testing:
-                print("  "* depth, "max best value:", v)
-            if v >= beta:
-                return v
-            alpha = max(alpha, v)
-            
-        return v
-
-    def right_value(s, alpha, beta, depth):
-        return max_value(s, -BigInitialValue, BigInitialValue, 0)
-
-    def argmin(seq, fn):
-        """Return an element with lowest fn(seq[i]) score; tie goes to first one.
-        >>> argmin(['one', 'to', 'three'], len)
-        'to'
-        """
-        # print(seq)        
-        
-        best = seq[0]; best_score = fn(best)
-        # print(best,best_score)
-        for x in seq:
-            x_score = fn(x)
-            if x_score < best_score:
-                best, best_score = x, x_score
-        return best
-
-    def argmax(seq, fn):
-        """Return an element with highest fn(seq[i]) score; tie goes to first one.
-        >>> argmax(['one', 'to', 'three'], len)
-        'three'
-        """
-        return argmin(seq, lambda x: -fn(x))
-
-    # Body of alphabeta_search starts here:
-    cutoff_test = (cutoff_test or
-                   (lambda state,depth: depth>d or state.game.terminal_test(state)))
-    eval_fn = eval_fn or (lambda state: flip*state.game.utility(state, turn_number))
-    action, state = argmax(state.game.successors(state),
-                            lambda a_s: right_value(a_s[1], -BigInitialValue, BigInitialValue, 0))
-
-    print('Total nodes evaluated:', count)
-
-    # calculate move time, round to 2 decimal places, store for analysis
-    MoveTimes.append(round(time.time() - start_time, 2))
-    return action
-
 def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None, turn_number=None):
     """Search game to determine best action; use alpha-beta pruning.
     This version cuts off search and uses an evaluation function."""
@@ -1292,10 +1265,15 @@ def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None
         for (a, s) in succ:
             # Decide whether to call max_value or min_value, depending on whose move it is next.
             # A player can move repeatedly if opponent is completely blocked
-            if state.to_move == s.to_move:
-                v = max(v, max_value(s, alpha, beta, depth+1))
+            if state.to_move.id == s.to_move.id:
+                if s.game.move_type in ('play_piece','add_piece_forced'):
+                    v = max(v, max_value(s, alpha, beta, depth+10))
+                else:
+                    v = max(v, max_value(s, alpha, beta, depth+1))
             else:
+                
                 v = max(v, min_value(s, alpha, beta, depth+1))
+                print('?')
             if testing:
                 print("  "* depth, "max best value:", v)
             if v >= beta:
@@ -1319,7 +1297,7 @@ def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None
         for (a, s) in succ:
             # Decide whether to call max_value or min_value, depending on whose move it is next.
             # A player can move repeatedly if opponent is completely blocked
-            if state.to_move == s.to_move:
+            if state.to_move.id == s.to_move.id:
                 v = min(v, min_value(s, alpha, beta, depth+1))
             else:
                 v = min(v, max_value(s, alpha, beta, depth+1))
@@ -1511,10 +1489,6 @@ def multi_run(repeat, one, two):
         all_pieces[18].append(piece.E11());
         all_pieces[19].append(piece.E12());
 
-        dm = divmod(i,50)[0]
-        d1 = [0.1,0.2,0.3,0.4,0.5,0.2,0.2,0.2,0.2,0.2]
-        d2 = [0.2,0.2,0.2,0.2,0.2,0.1,0.2,0.3,0.4,0.5]
-
         board = Board(8, 12, 0);
         board1 = Board(8, 12, 0);
         board2 = Board(8, 12, 0);
@@ -1526,30 +1500,18 @@ def multi_run(repeat, one, two):
         blokus = Blokus(order, all_pieces);
         
         firstp = P1
-        secondp = P2  
-        
-        # Start of game display
-        # Need to clear board before rendering
-        # render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
-        # [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],blokus.pieces+blokus.treasures,P2.pieces)          
-        
+        secondp = P2         
         
         play_blokus(blokus);
 
         # End of game display.
-        
-        firstp = P1
-        secondp = P2  
-        
-        # render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
-        # [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],blokus.pieces,P2.pieces)  
                 
         # blokus.play();
         plist = sorted(blokus.players, key = lambda p: p.id);
         gscores = []
         for player in plist:
             gscores.append(player.score)
-            print("Player "+ str(player.id) + " score: "+ str(player.score), player.score_breakdown,player.board.filled_spaces,player.board.piece_count);
+            print("Player "+ str(player.id) + " score: ", player.score, player.score_breakdown,player.board.filled_spaces,player.board.piece_count);
                   # + str([sh.id for sh in player.pieces]));
             for sh in player.pieces:
                 if sh.id in Names:
@@ -1640,7 +1602,7 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    Games = 10
+    Games = 1
     multi_run(Games, Paddington, Winnie);
 
 if __name__ == '__main__':

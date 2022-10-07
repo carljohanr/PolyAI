@@ -833,8 +833,9 @@ def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None
         for (a, s) in succ:
             # Decide whether to call max_value or min_value, depending on whose move it is next.
             # A player can move repeatedly if opponent is completely blocked
-            if state.to_move == s.to_move:
-                v = max(v, max_value(s, alpha, beta, depth))
+            if state.to_move.id == s.to_move.id:
+                # print('Tomato!')
+                v = max(v, max_value(s, alpha, beta, depth+1))
             else:
                 v = max(v, min_value(s, alpha, beta, depth+1))
             if testing:
@@ -860,8 +861,8 @@ def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None
         for (a, s) in succ:
             # Decide whether to call max_value or min_value, depending on whose move it is next.
             # A player can move repeatedly if opponent is completely blocked
-            if state.to_move == s.to_move:
-                v = min(v, min_value(s, alpha, beta, depth))
+            if state.to_move.id == s.to_move.id:
+                v = min(v, min_value(s, alpha, beta, depth+1))
             else:
                 v = min(v, max_value(s, alpha, beta, depth+1))
             if testing:
@@ -1295,7 +1296,7 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    Games = 10
+    Games = 100
     multi_run(Games, Patchy, Greedy_Player);
     # multi_run(Games, Greedy_Player, Random_Player);
 

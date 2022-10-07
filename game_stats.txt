@@ -168,11 +168,27 @@ Average Score P2:     16.0
 
 
 
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Pathcy (corrected) vs Greedy
+
+Games Played:       100
+Games Won:          69
+Games Lost:         30
+Games Tied:         1
+Win Rate:          69.0%
+
+Average Score P1:     26.2
+Average Score P2:     18.1
+
+
+
+
 Barenpark
 
 ================== STATISTICS ACROSS ALL GAMES ==================
 
-Paddington vs Greedy
+Winnie vs Greedy
 
 Games Played:       200
 Games Won:          112
@@ -186,7 +202,7 @@ Average Score P2:     70.7
 
 ================== STATISTICS ACROSS ALL GAMES ==================
 
-Paddington (v2) vs Greedy
+Winnie (v2) vs Greedy
 
 Games Played:       100
 Games Won:          93
@@ -198,4 +214,44 @@ Average Score P1:     84.5
 Average Score P2:     57.2
 
 
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Paddington (first 8 moves) vs Winnie
+
+Games Played:       10
+Games Won:          2
+Games Lost:         8
+Games Tied:         0
+Win Rate:          20.0%
+
+Average Score P1:     67.1
+Average Score P2:     78.5
+
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Paddington (first 8 moves) vs Winnie
+
+Games Played:       10
+Games Won:          5
+Games Lost:         4
+Games Tied:         1
+Win Rate:          50.0%
+
+Average Score P1:     77.9
+Average Score P2:     73.3
+
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Games Played:       20
+Games Won:          12
+Games Lost:         8
+Games Tied:         0
+Win Rate:          60.0%
+
+Average Score P1:     79.7
+Average Score P2:     74.8
 
