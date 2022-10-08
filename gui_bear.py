@@ -67,7 +67,10 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 screen.fill((255, 255, 255))
 
 def truncId(piece):
-    if piece.size <=4:
+    
+    if len(piece.id)==4:
+        return piece.id[0:-2]
+    elif piece.size <=4:
         return piece.id[0:-1]
     else:
         return piece.id

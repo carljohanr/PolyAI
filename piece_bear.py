@@ -31,6 +31,9 @@ class Piece:
         self.points = [];
         self.corners = [];
 
+    def set_points2(self, points):
+        self.points = points;
+
     # Create the object
     def create(self, num, pt):
         self.set_points(0, 0);
@@ -91,6 +94,7 @@ class G1(Piece):
         
     def set_points(self, x, y):
         self.points = [(x, y)];
+    
 
 class G2(Piece):
     def __init__(self,count):

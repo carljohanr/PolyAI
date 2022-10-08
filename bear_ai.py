@@ -24,6 +24,7 @@ import numpy as np
 from cats_score import score_board
 import cats_score
 from bear_score import cpenalty
+from bear_player import *
 # from cats_score import score_board_0
 
 # cutoff depth for alphabeta minimax search (default 2)
@@ -77,8 +78,7 @@ OpponentUseless = UselessInit
 
 
 
-# Blokus Board
-# DC-Claire
+# Barenpark Board
 class Board:
     def __init__(self, nrow, ncol, bcount):
         self.nrow = nrow; # total rows
@@ -120,6 +120,8 @@ class Board:
         
         self.resource_value = 0
         
+        self.recent_move = 0
+        
         self.visited = set()
         
         for row in range(self.nrow):
@@ -131,6 +133,7 @@ class Board:
         
         self.potential_breakdown = [0,0,0,0,0,0]
         self.this_score = 0
+        self.recent_move = proposal
         
         if move_type == 'expand_board':
             addon = proposal[2]
@@ -188,7 +191,7 @@ class Board:
                     self.potential_breakdown[2] += 2*rval[this_resource-1]
                 # Can only expand 3 times. Should probably handle this elsewhere.
                 elif this_resource == 10 and self.has_expansion + self.addon_value < 4:
-                    self.resource_value += 2
+                    self.resource_value += 4
                     self.potential_breakdown[3] += 5
                     self.has_expansion += 1
                 this_room = self.state3[row][col]
@@ -347,6 +350,189 @@ class Player:
         self.has_expansion = 0
         self.has_piece = [0,0,0]
         self.terminal = 0
+        
+        self.piece_ids = ['G1','G2','G3','G4','A1','A2','A3','A4','E1','E2','E3','E4','E5','E6','E7','E8','E9','E10','E11','E12'] 
+        self.unique_pieces = []
+        self.move_type = 'play_piece'
+        self.valid_set = []
+        self.inbound_set = []
+        self.valid_list = []
+        self.inbound_list = []
+        self.valid_value = []
+        self.valid_ranked = []
+        self.valid_max = []
+        
+        self.board_set = set()
+        self.board_occupied = set()
+        self.board_empty = set()
+        self.adj_set = set()
+        
+        self.resource_dict = {0:0,1:0.5,2:6,3:4,10:4}
+        
+        
+    def adj_xy(self,placement):
+        adj_set = set();
+        four_directions = [(1,0),(-1,0),(0,1),(0,-1)]
+        
+        # Check left, right, up, down for adjacent square
+        for y,x in placement:
+            for d1,d2 in four_directions:
+                (y1,x1) = (y+d1,x+d2)
+                if (y1,x1) in self.board_empty:
+                    adj_set.add((y1,x1))
+
+        return adj_set
+
+    def create_valid_sets(self):
+        
+        if self.board.moves_played == 0:
+            dummy = 0
+        # Generate all valid starting moves (only for the first piece)
+        # Using the possible_move_list function
+        
+        elif self.board.moves_played == 1 and self.move_type == 'play_piece':
+            for p in self.board.recent_move.points:
+                self.board_occupied.add(p)
+                self.board_empty = self.board_set.difference(self.board_occupied)
+                self.adj_set = self.adj_xy(self.board_occupied)
+            # print(self.board_occupied,self.adj_set)
+            # print(self.unique_pieces)
+            
+            for i in range(len(self.unique_pieces)):
+                placement_list = self.possible_move_list(self.unique_pieces[i],(1,1))
+                # print(placement_set)
+                for v in placement_list:
+                    self.valid_list.append([])
+                    self.inbound_list.append([])
+                    if len(v.intersection(self.adj_set))>0:
+                        self.valid_list[i].append(v)
+                    else:
+                        self.inbound_list[i].append(v)
+                 
+                        
+                # if i == 16:
+                    # print(self.id,self.unique_pieces[i].id,len(placement_list),len(self.valid_list[i]),len(self.inbound_list[i]))
+            
+            # time.sleep(5)
+        
+        elif self.board.moves_played > 1 and self.move_type == 'play_piece':
+            
+            # print(self.board.recent_move)
+            this_move = set(self.board.recent_move.points)
+            self.board_occupied.update(this_move)
+            self.board_empty.difference_update(this_move)
+            adj_next = self.adj_xy(this_move)
+            self.adj_set.difference_update(this_move)
+            self.adj_set.update(adj_next)
+
+            # print(self.adj_set)
+
+            # Incrementally update valid moves for all pieces:
+                
+            for i in range(len(self.unique_pieces)):
+            
+                counter0 = 0    
+            
+                new_valid_list = []
+                for v in self.valid_list[i]:
+                    if len(v.intersection(this_move))==0:
+                        counter0 +=1
+                        new_valid_list.append(v)
+                    self.valid_list[i] = copy.deepcopy(new_valid_list)
+                    
+                counter1,counter2 = 0,0
+        
+                new_inbound_list = []
+                for v in self.inbound_list[i]:
+                    if len(v.intersection(this_move))==0:
+                        if len(v.intersection(adj_next))>0:
+                            counter1+=1
+                            self.valid_list[i].append(v)
+                        else:
+                            counter2+=1
+                            new_inbound_list.append(v)
+                    
+                    self.inbound_list[i] = copy.deepcopy(new_inbound_list)
+                    
+                # if i == 16:
+                #     print(self.id,self.unique_pieces[i].id,'-',len(self.valid_list[i]),len(self.inbound_list[i]))
+                #     print('Counters:',counter1,counter2)
+                    
+        elif self.move_type == 'expand_board':
+            
+            this_move = self.board.recent_move
+            # print('Expanding board:',this_move,this_move[1])
+            four_directions = [(1,0),(-1,0),(0,1),(0,-1)]
+            location = this_move[1]
+            
+            #First expand the board_set and board_empty
+            board_add_set = set()
+            min_x,max_x = 4*location[0],4*location[0]+4
+            min_y,max_y = 4*location[1],4*location[1]+4
+            
+            for x in range(min_x,max_x):
+                for y in range(min_y,max_y):
+                    # Can simplify by using sets
+                    if self.board.state3[y][x] > 0:
+                        board_add_set.add((x,y))
+            
+                               
+            self.board_set.update(board_add_set)
+            self.board_empty.update(board_add_set)
+        
+            self.adj_set = self.adj_xy(self.board_occupied)
+        
+            #Then expand the adjacent set
+            
+           
+            for i in range(len(self.unique_pieces)):
+                placement_list = self.possible_move_list(self.unique_pieces[i],location)
+                
+                # print(placement_set)
+                
+                for v in placement_list:
+                    if len(v.intersection(self.adj_set))>0:
+                        self.valid_list[i].append(v)
+                    else:
+                        self.inbound_list[i].append(v)
+
+                # if i == 16:
+                #     print(self.id,self.unique_pieces[i].id,len(placement_list),len(self.valid_list[i]),len(self.inbound_list[i]))
+                        
+                # print('Stats after expanding board:', self.unique_pieces[i].id,len(self.valid_list[i]),len(self.inbound_list[i]))
+        
+        self.valid_value = []
+        # if (self.board.moves_played >= 1 and self.move_type == 'play_piece') or self.move_type == 'expand_board':
+        for i in range(len(self.valid_list)):
+            self.valid_value.append([])
+            for j in range(len(self.valid_list[i])):
+                this_val = 0
+                for k in self.valid_list[i][j]:
+                    (x,y)=k
+                    this_val += self.resource_dict[self.board.state4[y][x]]
+                self.valid_value[i].append(this_val)
+                    
+        # print([len(v) for v in self.valid_list])
+        # print([len(v) for v in self.valid_value])
+        # print('-')
+        # time.sleep(2)    
+    
+        # if self.board.moves_played ==5:
+        #     for i in range(20):
+        #         print(self.valid_value[i])
+                
+            #time.sleep(100)
+                    
+                    # if self.board.moves_played ==1:
+                    #     print(self.valid_list[i][j])
+            
+            
+        # elif self.board.moves_played > 1 and self.move_type == 'expand_board:
+            
+        #     dummy = 0
+            
+                        
+            
 
     # Add the player's initial pieces for a game
     def add_pieces(self, pieces):
@@ -358,7 +544,7 @@ class Player:
 
 
     # Updates player information after placing a board Piece
-    def update_player(self):
+    def update_player(self,flag = 0):
         self.score_breakdown[1:3] = self.board.score_breakdown
         self.score = sum(self.score_breakdown)
         self.potential = self.board.potential  
@@ -379,9 +565,86 @@ class Player:
             self.terminal = 1
             # print('Player',self.id, 'score:',self.score,self.score_breakdown)
         
+        if flag == 1:
+            self.create_valid_sets()
 
     # def possible_moves_pruned(self,pieces,game):
         
+
+    def possible_move_list(self,pieces,location = 0):
+    
+        if location == 0:
+            min_x,max_x = 0,self.board.ncol
+            min_y,max_y = 0,self.board.nrow
+        else:
+            min_x,max_x = 4*location[0],4*location[0]+4
+            min_y,max_y = 4*location[1],4*location[1]+4
+            
+    
+        visited = set()
+        pieces_unique = []
+        
+        # Pieces unique should be an input instead    
+        # for p in pieces:
+        #     if truncId(p) not in visited:
+        #         visited.add(truncId(p))
+        #         pieces_unique.append(p)
+        #     # print('Pruning:',len(pieces),len(pieces_unique))
+        
+        # locations = []
+        # t_counter = 0
+        
+        pieces_unique = [pieces]
+        # print('Unique pieces:', pieces_unique)
+        
+        free_spaces = set()
+        
+        for x in range(min_x,max_x):
+            for y in range(min_y,max_y):
+                # Can simplify by using sets
+                if (x,y) in self.board_set and self.board.state3[y][x] > 0:
+                    free_spaces.add((x,y))
+    
+        
+        placements = [] # a list of possible placements
+        visited = [] # a list placements (a set of points on board)
+        
+        # Check every available corner
+        num = 0
+        for cr in free_spaces:
+            # Check every available piece
+            for sh in pieces_unique:
+                # Check every flip
+                for flip in ["h", "v"]:
+                    # Check every rotation
+                    for rot in [0, 90, 180, 270]:
+                        # t_counter += 1
+                        # Create a copy to prevent an overwrite on the original
+                        candidate = copy.deepcopy(sh);
+                        candidate.create(num, cr);
+                        candidate.flip(flip);
+                        candidate.rotate(rot);
+                        # If the placement is valid and new
+                        if self.valid_all(candidate.points):
+                            if not set(candidate.points) in visited:
+                                placements.append(candidate);
+                                # if sh.id[:-1] == 'G2':
+                                #     print(candidate.points)
+                                # print('Piece:' + str(sh.color))
+                                visited.append(set(candidate.points));
+                
+                                
+        # print ([set(p.points) for p in placements])
+                
+        placement_list = [set(p.points) for p in placements]
+                                    
+        return placement_list;
+
+    def valid_all(self,placement):
+        if ((False in [self.board.in_bounds(pt) for pt in placement]) or self.board.overlap(placement)):
+            return False
+        else:
+            return True
 
     # Get a unique list of all possible placements
     def possible_moves(self,pieces, game,override = 0,simplified = 0):
@@ -416,6 +679,7 @@ class Player:
             if len(options) == 0:
                 print('Its pretty empty here!')
                 options.append(0)
+                options.append(1)
                     
             return options
         
@@ -454,14 +718,11 @@ class Player:
             self.free_spaces = set([(x, y) for(x, y) in locations
                                 if self.board.state[y][x] == 0 and self.board.state3[y][x]>0]);
             
-            # print(self.free_spaces)
-            # self.corners = set([(x, y) for(x, y) in self.corners
-            #                     if game.board.state[y][x] == '_']);
     
             placements = [] # a list of possible placements
             visited = [] # a list placements (a set of points on board)
     
-            # Check every available corner
+            # Check every available place in the board
             num = 0
             for cr in self.free_spaces:
                 # Check every available piece
@@ -485,7 +746,86 @@ class Player:
                                         
             # print(t_counter)
             return placements;
+
+    # Get a unique list of all possible placements
+    def possible_moves_ranked(self,pieces, game,override = 0,simplified = 0):
+
         
+        move_type = game.move_type         
+        # Should rename to actions        
+        if move_type in ['add_piece','add_piece_forced']:
+            
+            # What kind of piece did the player obtain? 
+            if self.has_piece[2]>0:
+                max_index = 20
+                min_index = 8
+            elif self.has_piece[1]>0:
+                max_index = 8
+                min_index = 0
+            else:
+                max_index = 4
+                min_index = 0
+            
+            options = []
+            scores = []
+            
+            for i in range(min_index,max_index):
+                if game.piece_counts[i] > 0:
+                    if len(self.valid_value[i])>0:
+                        max_value = max(self.valid_value[i])
+                    else:
+                        max_value = -100
+                    options.append(i)
+                    scores.append(max_value+game.all_pieces[i][0].score)
+                    new_options = [x for _, x in sorted(zip(scores, options), key=lambda pair: -pair[0])]
+                    
+            if len(options) == 0:
+                print('Its pretty empty here!')
+                options.append(0)
+                options.append(1)
+                    
+            return new_options[0:2]
+                
+            # return options        
+
+        elif move_type == 'play_piece':
+            
+            visited = set()
+            pieces_unique = []
+            
+            for p in pieces:
+                if truncId(p) not in visited:
+                    visited.add(truncId(p))
+                    pieces_unique.append(p)
+            # print('Pruning:',len(pieces),len(pieces_unique))
+            
+            placements = []
+            scores = []
+            
+            for p in pieces_unique:
+                pindex = self.piece_ids.index(truncId(p))
+                # print(self.valid_list)
+                # print('Piece index:', pindex,self.valid_list[pindex])
+                
+                # print([len(v) for v in self.valid_list])
+                # print([len(v) for v in self.valid_value])
+                
+                for i in range(len(self.valid_list[pindex])):
+                    candidate = copy.deepcopy(p)
+                    candidate.set_points2(list(self.valid_list[pindex][i]))
+                    placements.append(candidate)
+                    scores.append(self.valid_value[pindex][i])
+                                        
+                    
+            new_placements = [x for _, x in sorted(zip(scores, placements), key=lambda pair: -pair[0])]
+            
+            # print([p.points for p in placements])
+            # print(scores)
+            # print([p.points for p in new_placements])
+            # time.sleep(1000)
+            
+            # print(t_counter)
+            return placements;
      
     def getAllMax(self,list1,rank_list):
         
@@ -501,49 +841,17 @@ class Player:
      
     def possible_moves_pruned(self,pieces, game,override = 0,simplified = 0):
         
-        candidate_moves = self.possible_moves(pieces,game,override,simplified)
-        
-        if game.move_type == 'add_piece':
-            if max(candidate_moves)<=3:
-                if candidate_moves == [2,3]:
-                    #print('Common')
-                    piece_counts = game.players[0].piece_counts
-                    if piece_counts[3] > piece_counts[2]:
-                        candidate_moves = [2]
-                    else:
-                        candidate_moves = [3]
-                #print(candidate_moves,game.players[0].piece_counts)
-            elif 4<=max(candidate_moves)<=7:
-                # print(candidate_moves)
-                rank_list=[game.all_pieces[i][0].score for i in candidate_moves]
-                candidate_moves = self.getAllMax(candidate_moves,rank_list)
-                # print(candidate_moves)
-            else:
-                # print('Candidates',candidate_moves)
-                rank_list = [8,9,16,19,11,14,17,12,10,15,13,18]
-                new_candidates = []
-                for i in range(len(rank_list)):
-                    if rank_list[i] in candidate_moves and len(new_candidates)<4:
-                        new_candidates.append(rank_list[i])
-                    elif len(new_candidates)>=4:
-                        break
-                # print('New candidates',new_candidates)
-                candidate_moves = new_candidates
+        if (game.move_type == 'play_piece' and game.players[0].board.moves_played>1) or (game.move_type in ['add_piece','add_piece_forced']):
+            candidate_moves = self.possible_moves_ranked(pieces,game,override,simplified)
+            # Pruning
+            candidate_moves = candidate_moves[0:3]
+            # print (candidate_moves[0].points)
+            # time.sleep(100)
+        else:
+            candidate_moves = self.possible_moves(pieces,game,override,simplified)
             
         return candidate_moves
         
-
-
-    def plausible_moves(self, pieces, game, cutoff, pid):
-        placements = []
-        for piece in pieces:
-            possibles = self.possible_moves([piece], game)
-            if possibles != []:
-                for possible in possibles:
-                    placements.append(possible)
-                    if len(placements) == cutoff:
-                        return placements
-        return placements
 
     # Get the next move based off of the player's strategy
     def next_move(self, game): 
@@ -557,6 +865,12 @@ class Blokus:
         # self.board = board; 
         self.all_pieces = all_pieces; 
         # self.all_pieces = random.sample(self.all_pieces,len(all_pieces))
+        self.unique_pieces = []
+        for i in range(20):
+            self.unique_pieces.append(copy.deepcopy(self.all_pieces[i][0]))
+        for p in self.players:
+            p.unique_pieces = self.unique_pieces
+        
         
         self.starting_grids = grids.starting_grids
         self.starting_grids = random.sample(self.starting_grids,len(self.starting_grids))
@@ -574,6 +888,8 @@ class Blokus:
                     if start[j][i] == -1:
                         # print('-1 found')
                         p.board.state3[4+j][4+i] = 0
+                    else:
+                        p.board_set.add((4+i,4+j))
         
         # print(p.board.state3)
         # time.sleep(100)
@@ -608,6 +924,13 @@ class Blokus:
         
 
     # Check if a player's move is valid, including board bounds, pieces' overlap, adjacency, and corners.
+    
+    def valid_all(placement):
+        if ((False in [player.board.in_bounds(pt) for pt in placement]) or player.board.overlap(placement)):
+            return False
+        else:
+            return True
+    
     def valid_move(self, player, placement):
         if ((False in [player.board.in_bounds(pt) for pt in placement]) or player.board.overlap(placement)) or \
             ((player.board.moves_played>0) and player.board.adj(placement) == False):
@@ -657,6 +980,7 @@ class Blokus:
                     
         
         current = self.players[0]  
+        current.move_type = self.move_type
         
         if self.rounds == 0:
             render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
@@ -668,16 +992,18 @@ class Blokus:
 
         if self.move_type in ('add_piece','add_piece_forced'):
             self.take_piece(proposal)
-            current.update_player();
+            current.update_player(1);
             render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
                    [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],firstp.pieces,secondp.pieces,self.pieces_display)     
         
         elif self.move_type == 'expand_board':
             current.board.update(current.id,self.move_type, proposal,1)
             self.extra_grids[proposal[0]].pop(0)
-            current.update_player();
+            current.update_player(1);
             render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
                    [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],firstp.pieces,secondp.pieces,self.pieces_display)   
+            #print('Taking a break...')
+            #time.sleep(1000)
                 
         elif proposal is not None: # if there a possible proposed move
             color = proposal.color
@@ -691,7 +1017,7 @@ class Blokus:
                 current.piece_counts[this_pindex] -= 1
                 for i in range(current.board.this_completed):
                     current.score_breakdown[0] += self.area_completion_bonus.pop(0)
-                current.update_player();
+                current.update_player(1);
                 render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
                        [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],firstp.pieces,secondp.pieces,self.pieces_display)                     
                 # print(time.time()-t)
@@ -753,17 +1079,18 @@ class Blokus:
         
         newboard = copy.deepcopy(state)
         current = newboard.to_move;
+        current.move_type = newboard.game.move_type
 
         proposal = move
                                             
         if newboard.game.move_type in ('add_piece','add_piece_forced'):
             newboard.game.take_piece(proposal)
-            current.update_player();  
+            current.update_player(1);  
         
         elif newboard.game.move_type == 'expand_board':
             current.board.update(current.id,newboard.game.move_type, proposal,1)
             newboard.game.extra_grids[proposal[0]].pop(0)
-            current.update_player(); 
+            current.update_player(1); 
                 
         elif proposal is not None: # if there a possible proposed move
             # check if the move is valid
@@ -777,7 +1104,7 @@ class Blokus:
                 for i in range(current.board.this_completed):
                     current.score_breakdown[0] += newboard.game.area_completion_bonus.pop(0)                  
                 # print(time.time()-t)
-                current.update_player();
+                current.update_player(1);
 
             else: # end the game if an invalid move is proposed
                 raise Exception("Invalid move by player "+ str(current.id));
@@ -822,9 +1149,12 @@ class Blokus:
         "Return a list of legal (move, state) pairs."
         # find and return up to MovesToConsider possible moves as successors
         
-    
-        m = [(move, self.make_move(move, state))
-                for move in state.to_move.possible_moves_pruned(state.to_move.pieces, state.game,0,1)]
+        if state.to_move.board.moves_played < 12:
+            m = [(move, self.make_move(move, state))
+                    for move in state.to_move.possible_moves_pruned(state.to_move.pieces, state.game,0,1)]
+        else:
+            m = [(move, self.make_move(move, state))
+                    for move in state.to_move.possible_moves(state.to_move.pieces, state.game,0,0)]
         
         # Pruning to 5 options to make the search space smaller - doesn't work well with or without pruning
         
@@ -881,8 +1211,14 @@ class Blokus:
             # state.p1.board.filled_spaces + sum([p.size for p in state.p1.pieces])
         
             
-        total_breakdown = [(0.8-progress*0.05)*state.p1.hand_score,state.p1.score-0.3*state.p1.score_breakdown[0],sum([p.size for p in state.p1.pieces]),\
-                           state.p1.board.potential_breakdown[1],state.p1.board.potential_breakdown[4],0.75*state.p1.board.resource_value]
+        if state.to_move.board.moves_played <13:
+            
+            total_breakdown = [(0.8-progress*0.05)*state.p1.hand_score,state.p1.score-0.3*state.p1.score_breakdown[0],sum([p.size for p in state.p1.pieces]),\
+                               state.p1.board.potential_breakdown[1],state.p1.board.potential_breakdown[4],0.75*state.p1.board.resource_value]
+                
+        else:
+            
+            total_breakdown = [state.p1.score]
             
         #total_breakdown[5] = 0
             
@@ -893,528 +1229,7 @@ class Blokus:
         
         return total
 
-# This function will prompt the user for their piece
-def piece_prompt(options):
-    # Create an array with the valid piece names
-    print(options)
-    try:
-        option_names = [str(x.id) for x in options];
-    except:
-        option_names = [str(x) for x in options];
 
-    # Prompt the user for their choice
-    print("\nIt's your turn! Select one of the following options:");
-    choice = 0;
-    print (option_names)
-    
-    piece = input("Choose a piece: ");
-    print("");
-    try: 
-        if piece in ('p','P'):
-            return 'Pass'
-        i = int(piece)
-        piece = options[i-1]
-    except:
-        if piece in option_names:  # If the piece name is valid, retrieve the piece object
-            i = option_names.index(piece);
-            piece = options[i];
-        else:
-            print("INVALID PIECE. Please try again:");
-            choice = 0;
-    
-
-    # Once they've chosen a piece...
-    return piece;
-
-# This function will prompt the user for their placement
-def placement_prompt(possibles):
-    choice = -1; # An invalid "choice" to start the following loop
-
-    exclude_list=[]
-
-    # While the user hasn't chosen a valid placment...
-    while (choice < 1 or choice > len(possibles)):
-        # print(exclude_list)
-        count = 1; # Used to index each placement; initialized to 1
-        # Prompt the user for their placement
-        print("Select one of the following placements:")
-        for x in possibles:
-            if x not in exclude_list:
-                # print(x)
-                print("     " + str(count) + " - " + str(x.points));
-            count += 1;
-
-        # See if the user enters an integer; if they don't, handle the exception
-        try:
-            this_input = input("Choose a placement: ")
-            # print(this_input,'-' in this_input)
-            if '-' in this_input:
-                x,y = this_input.split('-')
-                this_point = (int(x)-1,int(y)-1)
-                # print('P: ', this_point)
-                for p in possibles:
-                    if this_point not in p.points and p not in exclude_list:
-                        exclude_list.append(p)
-                if len(possibles)-len(exclude_list) == 1:
-                    for z in range(len(possibles)):
-                        if possibles[z] not in exclude_list:
-                            choice = z+1
-                elif len(possibles)-len(exclude_list) == 0:
-                    exclude_list = []
-                
-            else:
-                choice = int(this_input);
-        except:
-            # Do nothing; if the user doesn't enter an integer, they will be prompted again
-            pass;
-        print("");
-
-    # Once they've made a valid placement...
-    placement = possibles[choice - 1];
-    return placement;    
-
-# Random Strategy: choose an available piece randomly
-def Random_Player(player, game, oval = 1):
-    
-    if game.move_type in (['add_piece','add_piece_forced']):
-        dummy = 0
-        possibles = player.possible_moves(dummy, game);
-        this_choice = random.choice(possibles)
-        # print('Pieces to select from:',possibles, this_choice)
-        return this_choice
-        
-    elif game.move_type == 'play_piece':
-        options = [p for p in player.pieces];
-        while len(options) > 0: # if there are still possible moves
-            piece = random.choice(options);
-            # Function returns a piece so does not need to return the color as well (possibles[x].color)
-            possibles = player.possible_moves([piece], game);
-            if len(possibles) != 0: # if there is possible moves
-                m = random.randint(0,len(possibles)-1)
-                return possibles[m]
-            else: # no possible move for that piece
-                options.remove(piece); # remove it from the options
-        return None; # no possible move left
-
-
-def Random_Player_v2(player, game, oval = 1):
-    
-    if game.move_type in (['add_piece','add_piece_forced']):
-        dummy = 0
-        possibles = player.possible_moves(dummy, game);
-        # this_choice = random.choice(possibles)
-        this_choice = max(possibles)
-        # print('Pieces to select from:',possibles, this_choice)
-        return this_choice
-
-    elif game.move_type == 'expand_board':
-        dummy = 0
-        possibles = player.possible_moves(dummy, game);
-        this_choice = random.choice(possibles)
-        return this_choice
-        
-    elif game.move_type == 'play_piece':
-        options = [p for p in player.pieces];
-        while len(options) > 0: # if there are still possible moves
-            piece = random.choice(options);
-            # Function returns a piece so does not need to return the color as well (possibles[x].color)
-            possibles = player.possible_moves([piece], game);
-            if len(possibles) != 0: # if there is possible moves
-                m = random.randint(0,len(possibles)-1)
-                return possibles[m]
-            else: # no possible move for that piece
-                options.remove(piece); # remove it from the options
-        return None; # no possible move left
-
-# Greedy Strategy: choose an available piece randomly based on own board only
-def Greedy_Player(player, game, oval = 1, single_option = 0):
-    
-    
-    if game.move_type in (['add_piece','add_piece_forced']):
-        dummy = 0
-        possibles = player.possible_moves(dummy, game);
-        
-        scores = []
-        for p in possibles:
-            scores.append(game.all_pieces[p][0].score+game.all_pieces[p][0].size)
-          
-        max_index,max_score = getMax(possibles,scores)
-        
-        # print('Scores by piece:',scores,max_index,max_score,possibles[max_index])
-        # The heuristic makes sense, but player ends up with holes that cannot be filled. Just picking the top index gets more square pieces
-        return possibles[max_index]
-        # return max(possibles)
-
-    elif game.move_type == 'expand_board':
-        dummy = 0
-        possibles = player.possible_moves(dummy, game);
-        this_choice = random.choice(possibles)
-        return this_choice
-        
-    elif game.move_type == 'play_piece':
-        options = [p for p in player.pieces];
-        scores = []
-        all_possibles = []
-        debug = []
-        grid2 = game.players[0].board.state3
-        maxval = max([max(s) for s in game.players[0].board.state2])
-        temp_counter = 0
-        
-        # print('Pieces in hand:', options)
-        
-        # Copying a partial state and evaluating it is unnecessary. Better do it in the update_board class.
-        for piece in options:
-            # print('Piece:', piece)
-            possibles = player.possible_moves([piece], game);
-            # print('Options for piece:',piece,len(possibles))
-            if len(possibles) != 0: # if there is possible moves
-                for m in range(len(possibles)):
-                    this_score = 0
-                    new_pieces = 0
-                    grid = copy.deepcopy(game.players[0].board.state)
-                    grid3 = copy.deepcopy(game.players[0].board.state4)
-                    # Should make a copy of the state and use the update function instead
-                    for (p0,p1) in possibles[m].points:
-                        grid[p1][p0]=1
-                        if grid3[p1][p0]<10:
-                            this_score += 2*grid3[p1][p0]
-                            new_pieces +=1
-                        elif grid3[p1][p0]==10:
-                            this_score += 5
-                    if new_pieces + len(player.pieces) < 2:
-                        this_score -= 100
-                    this_score += possibles[m].score-cpenalty(grid,grid2)
-                    # debug.append(fam_dummy)
-                    scores.append(this_score)
-                    all_possibles.append(possibles[m])            
-
-            else: # no possible move for that piece
-                dummy = 0 # Do nothing
-                # This statement created issues in the loop since we are looping over options
-                # options.remove(piece); # remove it from the options
-        
-        # print('--')
-
-        temp_counter+=1
-
-
-        if len(all_possibles)>0:
-            max_index,max_score = getMax(all_possibles,scores)
-    
-            # print(all_possibles[max_index].id)
-            return all_possibles[max_index]
-        else:
-            print('No possible options')
-            return None; # no possible move left
-
-
-
-# Greedy Strategy: choose an available piece randomly based on own board only
-def Winnie(player, game, oval = 1):
-    
-    # Move selection logic, could also be used for move ranking in search
-    # Player prefers pieces that have higher point value, but does not want repeat pieces (mainly relevant for corner and straight pieces)
-    
-    if game.move_type in (['add_piece','add_piece_forced']):
-        dummy = 0
-        possibles = player.possible_moves(dummy, game);
-        
-        scores = []
-        mcounts = []
-        
-        in_stock = 0
-        for p in possibles:
-            for i in range(len(player.pieces)):
-                pid1 = game.all_pieces[p][0].id
-                pid2 = player.pieces[i].id
-                if pid1 == pid2 or pid1[:-1] == pid2[:-1]:
-                    in_stock += 1
-            
-            mcount =len(player.possible_moves([game.all_pieces[p][0]],game,1))
-            if mcount ==0:
-                adj = 0
-            else:
-                adj = 1
-            mcounts.append(mcount)
-            # if in_stock > 0:
-            #     print(in_stock,'already in stock!')
-            scores.append(adj*game.all_pieces[p][0].score+adj*game.all_pieces[p][0].size-0.5*in_stock)
-         
-        # print('Move counts:', mcounts)
-        max_index,max_score = getMax(possibles,scores)
-        
-        # print('Scores by piece:',scores,max_index,max_score,possibles[max_index])
-        # The heuristic makes sense, but player ends up with holes that cannot be filled. Just picking the top index gets more square pieces
-        return possibles[max_index]
-        # return max(possibles)
-
-    elif game.move_type == 'expand_board':
-        dummy = 0
-        possibles = player.possible_moves(dummy, game);
-        
-        scores = []
-        all_possibles = []
-        
-        for m in possibles:
-            player_copy = copy.deepcopy(game.players[0])
-            player_copy.board.update(player.id,game.move_type,m)   
-            player_copy.update_player()
-            this_score = player_copy.potential
-            # Pieces that are more valuable for the opponent more likely to be considered
-            # But the player does not need to worry about where they are placed since board are indpendent
-            scores.append(this_score)
-            all_possibles.append(m)  
-        
-        if len(all_possibles)>0:
-            max_index,max_score = getMax(all_possibles,scores)
-            
-        return all_possibles[max_index]
-        
-        # this_choice = random.choice(possibles)
-        # return this_choice
-        
-    elif game.move_type == 'play_piece':
-        options = [p for p in player.pieces];
-        # print('Piece ids:', [p.id for p in options])
-        scores = []
-        all_possibles = []
-        debug = []
-        
-        # print('Pieces in hand:', options)
-        
-        for piece in options:
-            # print('Piece:', piece)
-            possibles = player.possible_moves([piece], game);
-            # print(len(possibles))
-            if len(possibles) != 0: # if there is possible moves
-                for m in possibles:
-                    player_copy = copy.deepcopy(game.players[0])
-                    player_copy.board.update(player.id,game.move_type,m)   
-                    player_copy.update_player()
-                    this_score = player_copy.potential
-                    # Pieces that are more valuable for the opponent more likely to be considered
-                    # But the player does not need to worry about where they are placed since board are indpendent
-                    scores.append(this_score)
-                    all_possibles.append(m)            
-    
-            # else: # no possible move for that piece
-            #     options.remove(piece); # remove it from the options
-                
-            
-        if len(all_possibles)>0:
-            max_index,max_score = getMax(all_possibles,scores)
-        
-            # print(all_possibles[max_index].id)
-            return all_possibles[max_index]
-        else:
-            print('No possible options')
-            return None; # no possible move left
-
-
-def Paddington(player, game, oval = 1):
-    # track start time for use in post-game move time analysis     
-    if player.board.piece_count>10: #or game.move_type !='play_piece':
-        return Winnie(player,game,1)   
-
-    start_time = time.time()
-    turn_number = 1
-
-    game_copy = copy.deepcopy(game)
-    state = BoardState(game_copy)
-    this_move = alphabeta_search(state, Depth, None, None, start_time, state.to_move.board.piece_count)
-    
-    # print(this_move.id,this_move.points)
-    
-    return this_move
-    
-    #time.sleep(100)
-
-# AI implementation, taken from mancala.py
-def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None, turn_number=None):
-    """Search game to determine best action; use alpha-beta pruning.
-    This version cuts off search and uses an evaluation function."""
-    global count
-    global testing
-    global BigInitialValue
-    global MoveTimes
-    
-    testing = False
-
-    print('Starting search',d)
-
-    player = state.to_move
-    if state.to_move.id == 1:
-        flip = 1
-    else:
-        flip = -1
-    count = 0
-
-    def max_value(state, alpha, beta, depth):
-        global count, testing
-        if testing:
-            print("  "* depth, "Max  alpha: ", alpha, " beta: ", beta, " depth: ", depth)
-        if cutoff_test(state, depth):
-            if testing:
-                print("  "* depth, "Max cutoff returning ", eval_fn(state))
-            return eval_fn(state)
-        v = -BigInitialValue
-        succ = state.game.successors(state)
-        count = count + len(succ)
-        if testing:
-            print("  "*depth, "maxDepth: ", depth, "Total:", count, "Successors: ", len(succ))
-        for (a, s) in succ:
-            # Decide whether to call max_value or min_value, depending on whose move it is next.
-            # A player can move repeatedly if opponent is completely blocked
-            if state.to_move.id == s.to_move.id:
-                if s.game.move_type in ('play_piece','add_piece_forced'):
-                    v = max(v, max_value(s, alpha, beta, depth+10))
-                else:
-                    v = max(v, max_value(s, alpha, beta, depth+1))
-            else:
-                
-                v = max(v, min_value(s, alpha, beta, depth+1))
-                print('?')
-            if testing:
-                print("  "* depth, "max best value:", v)
-            if v >= beta:
-                return v
-            alpha = max(alpha, v)
-        return v
-
-    def min_value(state, alpha, beta, depth):
-        global count
-        if testing:
-            print("  "*depth, "Min  alpha: ", alpha, " beta: ", beta, " depth: ", depth)
-        if cutoff_test(state, depth):
-            if testing:
-                print("  "*depth, "Min cutoff returning ", eval_fn(state))
-            return eval_fn(state)
-        v = BigInitialValue
-        succ = state.game.successors(state)
-        count = count + len(succ)
-        if testing:
-            print("  "*depth, "minDepth: ", depth, "Total:", count, "Successors: ", len(succ))
-        for (a, s) in succ:
-            # Decide whether to call max_value or min_value, depending on whose move it is next.
-            # A player can move repeatedly if opponent is completely blocked
-            if state.to_move.id == s.to_move.id:
-                v = min(v, min_value(s, alpha, beta, depth+1))
-            else:
-                v = min(v, max_value(s, alpha, beta, depth+1))
-            if testing:
-                print("  "*depth, "min best value:", v)
-            if v <= alpha:
-                return v
-            beta = min(beta, v)
-        return v
-
-    def right_value(s, alpha, beta, depth):
-        if s.to_move.id == state.to_move.id:
-            return max_value(s, -BigInitialValue, BigInitialValue, 0)
-        else:
-            return min_value(s, -BigInitialValue, BigInitialValue, 0)
-
-    def argmin(seq, fn):
-        """Return an element with lowest fn(seq[i]) score; tie goes to first one.
-        >>> argmin(['one', 'to', 'three'], len)
-        'to'
-        """
-        # print(seq)        
-        
-        best = seq[0]; best_score = fn(best)
-        # print(best,best_score)
-        for x in seq:
-            x_score = fn(x)
-            if x_score < best_score:
-                best, best_score = x, x_score
-        return best
-
-    def argmax(seq, fn):
-        """Return an element with highest fn(seq[i]) score; tie goes to first one.
-        >>> argmax(['one', 'to', 'three'], len)
-        'three'
-        """
-        return argmin(seq, lambda x: -fn(x))
-
-    # Body of alphabeta_search starts here:
-    cutoff_test = (cutoff_test or
-                   (lambda state,depth: depth>d or state.game.terminal_test(state)))
-    eval_fn = eval_fn or (lambda state: flip*state.game.utility(state, turn_number))
-    action, state = argmax(state.game.successors(state),
-                            lambda a_s: right_value(a_s[1], -BigInitialValue, BigInitialValue, 0))
-
-    print('Total nodes evaluated:', count)
-
-    # calculate move time, round to 2 decimal places, store for analysis
-    MoveTimes.append(round(time.time() - start_time, 2))
-    return action
-
-
-
-def getMax(candidates,scores):  
-    max_score = -1000000
-    max_index = 0
-    for a in range(len(candidates)):
-         if scores[a]>max_score:
-             max_index = a
-             max_score = scores[a]
-    return max_index,max_score
-
-# Human Strategy: choose an available piece and placement based on user input
-def Human_Player(player, game, oval = 1):
-    
-    if game.move_type in (['add_piece','add_piece_forced']):
-        dummy = 0
-        possibles = player.possible_moves(dummy, game);
-        return piece_prompt(possibles);
-        
-    elif game.move_type == 'expand_board':  
-        dummy = 0
-        possibles = player.possible_moves(dummy, game);
-        return piece_prompt(possibles);
-        
-    elif game.move_type == 'play_piece':
-    
-        options = []
-        for p in player.pieces:
-            possibles = player.possible_moves([p], game);
-            if len(possibles) != 0:
-                options.append(p)
-   
-        while len(options) > 0: # if there are still possible moves
-            piece = piece_prompt(options);
-            if piece=='Pass':
-                return None
-            possibles = player.possible_moves([piece], game);
-            if len(possibles) != 0: # if there is possible moves
-                return placement_prompt(possibles);
-            else: # no possible move for that piece
-                options.remove(piece); # remove it from the options
-    return None; # no possible move left
-
-
-# Human Strategy: choose an available piece and placement based on user input
-def Human_Player_Fast(player, game, oval = 1):
-    # turn_number = (TotalStartingPieces - len(player.pieces) + 1)
-    if game.rounds<2:
-        move = Greedy_Player(player,game,oval)
-        return move
-
-    else:
-
-        move = Human_Player(player,game,oval)
-        return move
-
-# Board state is no longer used
-class BoardState:
-    """Holds one state of the Blokus board, used to generate successors."""
-    def __init__(self, game=None):
-        self.game = game
-        self.p1 = [p for p in game.players if p.id == 1][0]
-        self.p2 = [p for p in game.players if p.id == 2][0]
-        # to_move keeps track of the player whose turn it is to move
-        self.to_move = game.players[0]
-        # self._board = game.board
 
 # Play a round of blokus (all players move), then print board.
 def play_blokus(blokus):

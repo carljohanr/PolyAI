@@ -22,29 +22,35 @@ pieces = []
 pieces.append(piece.A1(0));
 
 
-def possible_moves(state,start3,pieces):
+def possible_moves(state,state3,pieces,sub_location = 0):
+
+    if sub_location == 0:
+        min_x,max_x = 0,ncol
+        min_y,max_y = 0,nrow
+    else:
+        min_x,max_x = 4*location[0],4*location[0]+4
+        min_y,max_y = 4*location[1],4*location[1]+4
+        
 
     visited = set()
     pieces_unique = []
     
+    # Pieces unique should be an input instead    
     for p in pieces:
         if truncId(p) not in visited:
             visited.add(truncId(p))
             pieces_unique.append(p)
-    # print('Pruning:',len(pieces),len(pieces_unique))
+        # print('Pruning:',len(pieces),len(pieces_unique))
     
     locations = []
+    free_spaces = set()
     t_counter = 0
-    for i in range(ncol):
-        for j in range(nrow):
-            locations.append((i,j))
-    
-    free_spaces = set([(x, y) for(x, y) in locations
-                        if state[y][x] == 0 and state3[y][x]>0]);
-    
-    # print(self.free_spaces)
-    # self.corners = set([(x, y) for(x, y) in self.corners
-    #                     if game.board.state[y][x] == '_']);
+    for x in range(min_x,max_x):
+        for y in range(min_y,max_y):
+            # Can simplify by using sets
+            if state[y][x] == 0 and state3[y][x] > 0:
+                free_spaces.add((x,y))
+
     
     placements = [] # a list of possible placements
     visited = [] # a list placements (a set of points on board)
@@ -70,8 +76,10 @@ def possible_moves(state,start3,pieces):
                             placements.append(candidate);
                             # print('Piece:' + str(sh.color))
                             visited.append(set(candidate.points));
+                            
+    placement_set = set([p.points for p in placements])
                                 
-    return placements;
+    return placement_set;
 
 
 # Check if a player's move is valid, including board bounds, pieces' overlap, adjacency, and corners.
@@ -99,24 +107,6 @@ def in_bounds(point):
 # Check if a piece placement overlap another piece on the board
 def overlap(placement):
     return False in[(state[y][x] == 0) for x, y in placement]
-
-
-# Checks if a piece placement is adjacent to any square on
-# the board which are occupied by the player proposing the move.
-def adj(placement):
-    adjacents = [];
-    # Check left, right, up, down for adjacent square
-    for x, y in placement:
-        if in_bounds((x + 1, y)):
-            adjacents += [state[y][x + 1] > 0];
-        if in_bounds((x -1, y)):
-            adjacents += [state[y][x - 1] > 0];
-        if in_bounds((x, y -1)):
-            adjacents += [state[y - 1][x] > 0];
-        if in_bounds((x, y + 1)):
-            adjacents += [state[y + 1][x] > 0];
-            
-    return adjacents
            
 
 def adj_xy(placement):
@@ -134,40 +124,81 @@ def adj_xy(placement):
    
 pm = possible_moves(state,state3,pieces)  
 
-print(pm[0].points)
+print('Example move:',pm[0].points)
+
 
 board_set = set()
 board_occupied = set()
 adj_set = set()
-board_occupied.add((4,7))
 
+first_move = {(4,7)}
+board_occupied.update(first_move)
+
+# Initiate one sub-board with one space removed
 for y in range(4,8):
     for x in range(4,8):
         board_set.add((x,y))
 board_set.remove((6,5))
     
+# Empty spaces on the board
 board_empty = board_set.difference(board_occupied)
+print('Empty spaces:',len(board_empty))
 
-print(board_empty)
-
-state[7][4]=1
-
+# Adjacent spaces that are also on the board
 adj_test = adj_xy(board_occupied)
-
 print(adj_test)
 
-
+# Generating all valid moves on this_board from the full set of possible moves
 valid_moves = set()
 inbound_moves = set()
 
+# Generate the initial set of valid moves (only done once, and partially when new sub-boards are added)
 for p in pm:
-    if len(set(p.points).intersection(board_set))==p.size:
+    if len(set(p.points).intersection(board_empty))==p.size:
         if len(set(p.points).intersection(adj_test))>0:
             valid_moves.add(p)
         else:
             inbound_moves.add(p)
 
 print(len(valid_moves),len(inbound_moves))
+
+# Make another move and update the sets
+next_move = {(5,6),(5,7),(6,7)}
+board_occupied.update(next_move)
+board_empty.difference_update(next_move)
+adj_next = adj_xy(next_move)
+adj_test.difference_update(next_move)
+adj_test.update(adj_next)
+
+print(adj_test)
+
+non_valid = set()
+for v in valid_moves:
+    vset = set(v.points)
+    if len(vset.intersection(next_move))>0:
+        non_valid.add(v)
+
+valid_moves.difference_update(non_valid)
+
+non_in = set()
+
+for v in inbound_moves:
+    vset = set(v.points)
+    if len(vset.intersection(next_move))>0:
+        non_in.add(v)
+    elif len(vset.intersection(adj_next))>0:
+        valid_moves.add(v)
+        non_in.add(v)
+        
+inbound_moves.difference_update(non_in)
+        
+print([v.points for v in inbound_moves])
+
+# New set of valid moves and potential future candidates
+print(len(valid_moves),len(inbound_moves))      
+        
+
+
 
 
             
