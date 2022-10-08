@@ -367,7 +367,7 @@ class Player:
         self.board_empty = set()
         self.adj_set = set()
         
-        self.resource_dict = {0:0,1:0.5,2:6,3:4,10:4}
+        self.resource_dict = {0:0,1:0.5,2:6,3:4,10:5}
         
         
     def adj_xy(self,placement):
@@ -382,6 +382,22 @@ class Player:
                     adj_set.add((y1,x1))
 
         return adj_set
+
+    def adj_xy_score(self,placement):
+        score = 0
+        four_directions = [(1,0),(-1,0),(0,1),(0,-1)]
+        
+        # Check left, right, up, down for adjacent square
+        for y,x in placement:
+            for d1,d2 in four_directions:
+                (y1,x1) = (y+d1,x+d2)
+                if (y1,x1) not in placement:
+                    if (y1,x1) in self.board_empty:
+                        score -= 1
+                    else:
+                        score += 1
+
+        return score
 
     def create_valid_sets(self):
         
@@ -501,15 +517,19 @@ class Player:
                         
                 # print('Stats after expanding board:', self.unique_pieces[i].id,len(self.valid_list[i]),len(self.inbound_list[i]))
         
+        
+        # Computing the value of a move. Taking a resource gives player credit, but increasing entropy loses points
         self.valid_value = []
-        # if (self.board.moves_played >= 1 and self.move_type == 'play_piece') or self.move_type == 'expand_board':
         for i in range(len(self.valid_list)):
             self.valid_value.append([])
             for j in range(len(self.valid_list[i])):
-                this_val = 0
+                this_val1 = 0
+                this_val2 = 0
                 for k in self.valid_list[i][j]:
                     (x,y)=k
-                    this_val += self.resource_dict[self.board.state4[y][x]]
+                    this_val1 += self.resource_dict[self.board.state4[y][x]]
+                    this_val2 += self.adj_xy_score(self.valid_list[i][j])
+                this_val = this_val1 + min(0.3,max(0,-0.2+0.1*self.board.moves_played)) * this_val2
                 self.valid_value[i].append(this_val)
                     
         # print([len(v) for v in self.valid_list])
@@ -776,7 +796,7 @@ class Player:
                     else:
                         max_value = -100
                     options.append(i)
-                    scores.append(max_value+game.all_pieces[i][0].score)
+                    scores.append(max_value+game.all_pieces[i][0].score+0.5*game.all_pieces[i][0].size)
                     new_options = [x for _, x in sorted(zip(scores, options), key=lambda pair: -pair[0])]
                     
             if len(options) == 0:
@@ -784,7 +804,7 @@ class Player:
                 options.append(0)
                 options.append(1)
                     
-            return new_options[0:2]
+            return new_options[0:1]
                 
             # return options        
 
@@ -814,7 +834,7 @@ class Player:
                     candidate = copy.deepcopy(p)
                     candidate.set_points2(list(self.valid_list[pindex][i]))
                     placements.append(candidate)
-                    scores.append(self.valid_value[pindex][i])
+                    scores.append(self.valid_value[pindex][i]+p.score+0.5*p.size)
                                         
                     
             new_placements = [x for _, x in sorted(zip(scores, placements), key=lambda pair: -pair[0])]
@@ -825,7 +845,7 @@ class Player:
             # time.sleep(1000)
             
             # print(t_counter)
-            return placements;
+            return new_placements;
      
     def getAllMax(self,list1,rank_list):
         
@@ -1417,7 +1437,7 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    Games = 1
+    Games = 20
     multi_run(Games, Paddington, Winnie);
 
 if __name__ == '__main__':

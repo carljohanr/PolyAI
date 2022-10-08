@@ -342,7 +342,7 @@ def Winnie(player, game, oval = 1):
 def Paddington(player, game, oval = 1):
     # track start time for use in post-game move time analysis     
     
-    if player.board.piece_count>20: #or game.move_type !='play_piece':
+    if player.board.piece_count>12: #or game.move_type !='play_piece':
         return Winnie(player,game,1)   
     
     Depth = 15
