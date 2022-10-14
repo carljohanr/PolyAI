@@ -259,18 +259,27 @@ Average Score P1:     81.6
 Average Score P2:     73.4
 
 
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Games Played:       50
+Games Won:          40
+Games Lost:         8
+Games Tied:         2
+Win Rate:          80.0%
+
+Average Score P1:     84.3
+Average Score P2:     72.6
+
+
+Simplified Bärenpark w/Grizzlies
 
 ================== STATISTICS ACROSS ALL GAMES ==================
 
-10/8 - Paddington (first 12 placements) vs Winnie
+Games Played:       10
+Games Won:          9
+Games Lost:         0
+Games Tied:         1
+Win Rate:          90.0%
 
-Games Played:       20
-Games Won:          16
-Games Lost:         4
-Games Tied:         0
-Win Rate:          80.0%
-
-Average Score P1:     83.6
-Average Score P2:     70.4
-
-
+Average Score P1:     142.6
+Average Score P2:     124.8

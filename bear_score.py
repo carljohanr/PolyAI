@@ -6,11 +6,22 @@ Created on Tue Oct  4 19:31:34 2022
 @author: carljohan
 """
 
+def in_bounds(i,j,nrow,ncol):
+    if i<0 or i>=nrow or j<0 or j>ncol:
+        return 0
+    else:
+        return 1
+
 def cpenalty(grid,grid3):
     
     # Correct to give penalty for empty spaces on the side (perhaps pad first)
     
+    nrow = len(grid)
+    ncol = len(grid[0])
+    
+    
     cpenalty = 0
+    
     
     for  i in range(len(grid)):
         for j in range(len(grid[0])):
@@ -21,15 +32,32 @@ def cpenalty(grid,grid3):
                 grid[i][j]=1
                 
 
-    for  i in range(len(grid)-1):
+    for  i in range(len(grid)):
         for j in range(len(grid[0])):
-            if min(abs(grid3[i][j]),abs(grid3[i+1][j]))>0:
-                cpenalty+=abs(grid[i][j]-grid[i+1][j])
+            if in_bounds(i,j,nrow,ncol)==0 or grid3[i][j]==0:
+                val1 = 1
+            else: 
+                val1 = grid[i][j]
+            if in_bounds(i-1,j,nrow,ncol)==0 or grid3[i-1][j]==0:
+                val2 = 1
+            else: 
+                val2 = grid[i][j]
+                
+            cpenalty+=abs(val1-val2)
 
     for  i in range(len(grid)):
-        for j in range(len(grid[0])-1):
-            if min(abs(grid3[i][j]),abs(grid3[i][j+1]))>0:
-                cpenalty+=abs(grid[i][j]-grid[i][j+1])
+        for j in range(len(grid[0])):
+            
+            if in_bounds(i,j,nrow,ncol)==0 or grid3[i][j]==0:
+                val1 = 1
+            else: 
+                val1 = grid[i][j]
+            if in_bounds(i,j-1,nrow,ncol)==0 or grid3[i][j-1]==0:
+                val2 = 1
+            else: 
+                val2 = grid[i][j]
+                
+            cpenalty+=abs(val1-val2)
                 
     return cpenalty
 

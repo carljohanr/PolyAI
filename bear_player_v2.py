@@ -41,7 +41,19 @@ def piece_prompt(options,move_type):
     # Prompt the user for their choice
     print("\nIt's your turn! Select one of the following options:");
     choice = 0;
-    print (option_names)
+    # print (option_names)
+    
+    count = 0
+    
+    for x in option_names:
+        count +=1
+        print("     " + str(count) + " - " + str(x));
+        
+        if count<len(option_names)-1 and option_names[count][0] != x[0]:
+            print("     --")
+        
+        # count += 1;
+    
     
     piece = input("Choose a piece: ");
     print("");
@@ -325,7 +337,7 @@ def Winnie(player, game, oval = 1):
         # return this_choice
         
     elif game.move_type == 'play_piece':
-        options = [p for p in player.pieces];
+        options = [p[0] for p in game.all_pieces if len(p)>0];
         # print('Piece ids:', [p.id for p in options])
         scores = []
         all_possibles = []
@@ -365,14 +377,17 @@ def Winnie(player, game, oval = 1):
 def Paddington(player, game, oval = 1):
     # track start time for use in post-game move time analysis     
     
-    if player.board.piece_count>15: #or game.move_type !='play_piece':
-        return Winnie(player,game,1)   
     
-    Depth = 15
-    # if player.board.moves_played>13:
-    #     Depth = 25
+    Depth = 25
+    if player.board.moves_played>13:
+        Depth = 45
+    elif player.board.moves_played>8:
+        Depth = 35
+        
 
-    start_time = time.time()
+    t0 = time.time()
+    start_time = t0
+    
     turn_number = 1
 
     game_copy = copy.deepcopy(game)
@@ -380,6 +395,9 @@ def Paddington(player, game, oval = 1):
     this_move = alphabeta_search(state, Depth, None, None, start_time, state.to_move.board.piece_count)
     
     # print(this_move.id,this_move.points)
+   
+    t1 = time.time()
+    print('Paddington time taken s:',round((t1-t0),2))
     
     return this_move
     
@@ -531,8 +549,11 @@ def Human_Player(player, game, oval = 1):
         
     elif game.move_type == 'play_piece':
     
+        initial_options = [p[0] for p in game.all_pieces if len(p)>0];    
+    
         options = []
-        for p in player.pieces:
+        
+        for p in initial_options:
             possibles = player.possible_moves([p], game);
             if len(possibles) != 0:
                 options.append(p)
