@@ -8,7 +8,8 @@ Created on Fri Oct  7 13:45:23 2022
 
 import time
 import copy
-
+import pygame
+import config
 
 # used for alphabeta search
 count = 0
@@ -75,7 +76,7 @@ def piece_prompt(options,move_type):
     return piece;
 
 # This function will prompt the user for their placement
-def placement_prompt(possibles):
+def placement_prompt_old(possibles):
     choice = -1; # An invalid "choice" to start the following loop
 
     exclude_list=[]
@@ -95,10 +96,13 @@ def placement_prompt(possibles):
                 print("     " + str(count) + " - " + str(printx));
             count += 1;
 
+
         # See if the user enters an integer; if they don't, handle the exception
         try:
             this_input = input("Choose a placement: ")
             # print(this_input,'-' in this_input)
+            
+            
             if '-' in this_input:
                 x,y = this_input.split('-')
                 this_point = (int(x)-1,int(y)-1)
@@ -119,6 +123,63 @@ def placement_prompt(possibles):
             # Do nothing; if the user doesn't enter an integer, they will be prompted again
             pass;
         print("");
+
+    # Once they've made a valid placement...
+    placement = possibles[choice - 1];
+    return placement;   
+
+# This function will prompt the user for their placement
+def placement_prompt(possibles):
+    choice = -1; # An invalid "choice" to start the following loop
+
+    exclude_list=[]
+
+    # While the user hasn't chosen a valid placment...
+    while (choice < 1 or choice > len(possibles)):
+        # print(exclude_list)
+        count = 1; # Used to index each placement; initialized to 1
+        # Prompt the user for their placement
+        # print("Select one of the following placements:")
+        for x in possibles:
+            if x not in exclude_list:
+                printx = x.points
+                printx = [(x+1,y+1) for (x,y) in printx]
+                printx = set(printx)
+                # print(x)
+                # print("     " + str(count) + " - " + str(printx));
+            count += 1;
+
+        pygame.mouse.set_cursor(*pygame.cursors.arrow)
+
+        ev = pygame.event.get()
+
+        # proceed events
+        for event in ev:
+          # handle MOUSEBUTTONUP
+          if event.type == pygame.MOUSEBUTTONUP:
+            pos = pygame.mouse.get_pos()
+            # print(pos)
+            xpos,ypos = pos[0],pos[1]
+            # print(config.params)
+            
+            p = config.params[0]
+            
+            this_x = p[3]+int((xpos-p[1])/p[0])
+            this_y = p[4]+int((ypos-p[2])/p[0])
+            
+            # print(this_x,this_y)
+            
+            this_point = (this_x,this_y)
+            # print('P: ', this_point)
+            for p in possibles:
+                if this_point not in p.points and p not in exclude_list:
+                    exclude_list.append(p)
+            if len(possibles)-len(exclude_list) == 1:
+                for z in range(len(possibles)):
+                    if possibles[z] not in exclude_list:
+                        choice = z+1
+            elif len(possibles)-len(exclude_list) == 0:
+                exclude_list = []
 
     # Once they've made a valid placement...
     placement = possibles[choice - 1];
@@ -378,11 +439,11 @@ def Paddington(player, game, oval = 1):
     # track start time for use in post-game move time analysis     
     
     
-    Depth = 25
+    Depth = 35
     if player.board.moves_played>13:
-        Depth = 45
+        Depth = 65
     elif player.board.moves_played>8:
-        Depth = 35
+        Depth = 45
         
 
     t0 = time.time()
@@ -390,9 +451,13 @@ def Paddington(player, game, oval = 1):
     
     turn_number = 1
 
+    
+
     game_copy = copy.deepcopy(game)
     state = BoardState(game_copy)
-    this_move = alphabeta_search(state, Depth, None, None, start_time, state.to_move.board.piece_count)
+    # Test resetting one player
+    # state.game.players[1]=0
+    this_move = alphabeta_search(state, Depth,1, None, None, start_time, state.to_move.board.piece_count)
     
     # print(this_move.id,this_move.points)
    
@@ -403,8 +468,38 @@ def Paddington(player, game, oval = 1):
     
     #time.sleep(100)
 
+def PaddingtonBasic(player, game, oval = 1):
+    # track start time for use in post-game move time analysis     
+    
+    
+    Depth = 5
+    if player.board.moves_played>13:
+        Depth = 25
+    elif player.board.moves_played>8:
+        Depth = 15
+        
+
+    t0 = time.time()
+    start_time = t0
+    
+    turn_number = 1
+
+    game_copy = copy.deepcopy(game)
+    state = BoardState(game_copy)
+    this_move = alphabeta_search(state, Depth, 1, None, None, start_time, state.to_move.board.piece_count)
+    
+    # print(this_move.id,this_move.points)
+   
+    t1 = time.time()
+    print('Paddington time taken s:',round((t1-t0),2))
+    
+    return this_move
+    
+    #time.sleep(100)
+
+
 # AI implementation, taken from mancala.py
-def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None, turn_number=None):
+def alphabeta_search(state, d=1, utility_param = 0, cutoff_test=None, eval_fn=None, start_time=None, turn_number=None):
     """Search game to determine best action; use alpha-beta pruning.
     This version cuts off search and uses an evaluation function."""
     global count
@@ -417,10 +512,11 @@ def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None
     print('Starting search',d)
 
     player = state.to_move
-    if state.to_move.id == 1:
-        flip = 1
-    else:
-        flip = -1
+    flip = 1
+    # if state.to_move.id == 1:
+    #     flip = 1
+    # else:
+    #     flip = -1
     count = 0
 
     def max_value(state, alpha, beta, depth):
@@ -432,7 +528,11 @@ def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None
                 print("  "* depth, "Max cutoff returning ", eval_fn(state))
             return eval_fn(state)
         v = -BigInitialValue
-        succ = state.game.successors(state)
+        
+        if cutoff_test(state, depth+10) and state.game.move_type == 'play_piece':
+            succ = state.game.successors(state,utility_param,0)
+        else:
+            succ = state.game.successors(state,utility_param,1)
         count = count + len(succ)
         if testing:
             print("  "*depth, "maxDepth: ", depth, "Total:", count, "Successors: ", len(succ))
@@ -456,6 +556,7 @@ def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None
         return v
 
     def min_value(state, alpha, beta, depth):
+        # print('Computing min value')
         global count
         if testing:
             print("  "*depth, "Min  alpha: ", alpha, " beta: ", beta, " depth: ", depth)
@@ -511,10 +612,13 @@ def alphabeta_search(state, d=1, cutoff_test=None, eval_fn=None, start_time=None
         return argmin(seq, lambda x: -fn(x))
 
     # Body of alphabeta_search starts here:
+        
+    # Allow the function to pass parameters to the utility - could be used in move ranking as well.
+        
     cutoff_test = (cutoff_test or
                    (lambda state,depth: depth>d or state.game.terminal_test(state)))
-    eval_fn = eval_fn or (lambda state: flip*state.game.utility(state, turn_number))
-    action, state = argmax(state.game.successors(state),
+    eval_fn = eval_fn or (lambda state: flip*state.game.utility(state, turn_number,utility_param))
+    action, state = argmax(state.game.successors(state,utility_param),
                             lambda a_s: right_value(a_s[1], -BigInitialValue, BigInitialValue, 0))
 
     print('Total nodes evaluated:', count)
@@ -587,8 +691,12 @@ class BoardState:
     """Holds one state of the Blokus board, used to generate successors."""
     def __init__(self, game=None):
         self.game = game
-        self.p1 = [p for p in game.players if p.id == 1][0]
-        self.p2 = [p for p in game.players if p.id == 2][0]
+        # self.p1 = [p for p in game.players if p.id == 1][0]
+        # self.p2 = [p for p in game.players if p.id == 2][0]
+        
+        self.p1 = game.players[0]
+        self.p2 = game.players[1]
+        
         # to_move keeps track of the player whose turn it is to move
         self.to_move = game.players[0]
         # self._board = game.board

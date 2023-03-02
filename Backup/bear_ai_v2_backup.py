@@ -11,13 +11,11 @@ It has been adapted from Blokus code, and contains some hacks that makes it illo
 
 '''
 
-import pickle
 import sys
 import math
 import random
 import copy
 import piece_bear as piece
-from bear_custom_pieces import *
 import grids_bear as grids
 from gui_bear import *
 import operator
@@ -28,7 +26,6 @@ import cats_score
 from bear_score import cpenalty
 from bear_player_v2 import *
 import itertools
-import config
 # from cats_score import score_board_0
 
 # cutoff depth for alphabeta minimax search (default 2)
@@ -55,9 +52,7 @@ Outcomes = []
 Scores1 = []
 Scores2 = []
 
-# AllMoves = [[[],[],[],[],[]],[[],[],[],[],[]],[[],[],[],[],[]]]
-# Omino_map = []
-
+AllMoves = [[[],[],[]],[[],[],[]]]
 
 Names = ['X','T','Z','W','U','F','P','I','L','N','Y','V']
 
@@ -117,17 +112,8 @@ class Board:
         #     self.room_locations.append(set())
         self.park_spaces_covered = [0,0,0,0,0]
         
-        self.achievements_completed = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-        self.new_achievements_completed = []
-        
-        # Achievement tracking
-        self.pieces_by_color = [0,0,0,0]
-        self.houses_by_color = [0,0,0,0]
-        
-        
-        #boardsize
-        self.board_map = [[0,0,0,0,0],[0,0,0,0,0],[0,0,1,0,0]]
-        self.board_adj_map = [[0,0,0,0,0],[0,0,1,0,0],[0,1,0,1,0]]
+        self.board_map = [[0,0,0],[0,1,0]]
+        self.board_adj_map = [[0,1,0],[1,0,1]]
         
         self.has_expansion = 0
         self.filled_spaces = 0
@@ -165,10 +151,6 @@ class Board:
         self.this_score = 0
         self.recent_move = proposal
         
-        old_achivements_completed = copy.deepcopy(self.achievements_completed)
-        self.new_achievements_completed = []
-        
-        
         if move_type == 'expand_board':
             addon = proposal[2]
             (x,y) = proposal[1]
@@ -187,9 +169,9 @@ class Board:
                         self.state4[4*y+j][4*x+i] = 0
                         
                 
-            #boardsize
-            for j in range(15):
-                vc,hc = divmod(j,5)
+
+            for j in range(6):
+                vc,hc = divmod(j,3)
                 if abs(vc-y)+abs(hc-x)==1 and self.board_map[vc][hc]==0:
                     self.board_adj_map[vc][hc]=1
             self.board_adj_map[y][x]=0
@@ -204,7 +186,6 @@ class Board:
             placement = proposal.points
             color = proposal.color
             pset = set(placement)
-            size = proposal.size
             
             # Note to self: Need to copy the old one when working with arrays
             old_spaces_covered = copy.deepcopy(self.park_spaces_covered)
@@ -251,10 +232,6 @@ class Board:
             self.potential_breakdown[5]+= 5*self.this_completed
             # if self.this_completed>0:
                 
-            # Completing two areas at the same time
-            if self.this_completed>1:
-                self.achievements_completed[9]=1
-                
             # print('Resources gained:',self.has_piece,self.has_expansion)
             # print('Debug:',self.park_spaces_covered,self.filled_spaces,self.this_completed)
     
@@ -282,8 +259,11 @@ class Board:
             if self.debug == 1:
                 print('(1) Update board time taken ms:', round((t1-t0)*1000,3))
             
-            # Cpenalty is a compactness penalty; could be computed incrementally in player class as well
-
+            
+            grid = copy.deepcopy(self.state)
+            self.potential_breakdown[1] -= cpenalty(grid,self.state3)
+            
+            
             
             # Perhaps need to handle in player class
             # if new_pieces + len(player.pieces) < 2:
@@ -291,25 +271,6 @@ class Board:
             
             # potential_breakdown = [0,0,0,0,0]
             # self.potential = sum(potential_breakdown)
-            
-            # Check for color_based achievements
-            
-            if color in [2,3,4,5]:
-                self.pieces_by_color[color-2] += 1
-                if size == 4:
-                    self.houses_by_color[color-2] += 1
-                # print('Pieces by color',self.pieces_by_color)
-            
-            for i in range(4):
-                if self.pieces_by_color[i]==3:
-                    self.achievements_completed[i]=1
-                    
-            if min(self.houses_by_color)>0:
-                self.achievements_completed[8]=1
-                
-            
-            
-        # End of play piece section, generating some additional board statistics
           
         t1 = time.time()
         
@@ -322,10 +283,7 @@ class Board:
             for col in range(self.ncol):
                 if self.state3[row][col]==0:
                     self.visited.add((row,col))
- 
-        grid = copy.deepcopy(self.state)
-        self.potential_breakdown[1] -= cpenalty(grid,self.state3)                   
- 
+                    
         groups = list()
         visited = copy.deepcopy(self.visited)
                     
@@ -342,11 +300,9 @@ class Board:
         # Recovered defaults. With large penalties, bot sometimes gets stuck since it cannot expand the board.
         for h in self.hole_stats:
             if h ==1:
-                self.potential_breakdown[4] -= 5
+                self.potential_breakdown[4] -= 3
             elif h ==2:
-                self.potential_breakdown[4] -= 2
-            elif h ==3:
-                self.potential_breakdown[4] -= 0
+                self.potential_breakdown[4] -= 1.5
                 
         self.potential_breakdown[4] -= len(self.hole_stats)
         
@@ -361,12 +317,6 @@ class Board:
         # print('Hole stats:',player_id,[len(h) for h in self.holes])
         # print('Board score',player_id,self.score,self.score_breakdown)
         # print('Potential',player_id,self.potential,self.potential_breakdown)
-        
-        for i in range(16):
-            if old_achivements_completed[i]==0 and self.achievements_completed[i]==1:
-                self.new_achievements_completed.append(i)
-        
-        # print('Achievements completed',self.new_achievements_completed)
         
 
     # Check if the point (y, x) is within the board's bound
@@ -478,7 +428,6 @@ class Player:
         self.next_completion_bonus = 20
         
         self.move_count=1
-        self.move_counts=[]
         
         self.resource_dict = {0:0,1:1,2:6,3:4,10:5}
         self.pieces_by_type = [0,0,0,0]
@@ -535,9 +484,8 @@ class Player:
             # print(self.unique_pieces)
             
             for i in range(len(self.unique_pieces)):
-                #boardsize
-                placement_list = self.possible_move_list(self.unique_pieces[i],(2,2))
-                # print(placement_list)
+                placement_list = self.possible_move_list(self.unique_pieces[i],(1,1))
+                # print(placement_set)
                 self.valid_list.append([])
                 self.inbound_list.append([])
                 for v in placement_list:    
@@ -570,17 +518,37 @@ class Player:
             for i in range(len(self.unique_pieces)):
             
                 counter0 = 0    
+            
                 new_valid_list = []
                 
                 self.valid_list[i] = [v for v in self.valid_list[i] if len(v.intersection(this_move))==0]
+                
+                # for v in self.valid_list[i]:
+                #     if len(v.intersection(this_move))==0:
+                #         counter0 +=1
+                #         new_valid_list.append(v)
+                #     self.valid_list[i] = copy.deepcopy(new_valid_list)
                     
                 counter1,counter2 = 0,0
         
                 self.valid_list[i] += [v for v in self.inbound_list[i] if len(v.intersection(this_move))==0 and len(v.intersection(adj_next))>0]
                 self.inbound_list[i] = [v for v in self.inbound_list[i] if len(v.intersection(this_move))==0 and len(v.intersection(adj_next))==0]
         
-                # print('#Moves for piece i',i,len(self.valid_list[i]))
-        
+                # new_inbound_list = []
+                # for v in self.inbound_list[i]:
+                #     if len(v.intersection(this_move))==0:
+                #         if len(v.intersection(adj_next))>0:
+                #             counter1+=1
+                #             self.valid_list[i].append(v)
+                #         else:
+                #             counter2+=1
+                #             new_inbound_list.append(v)
+                    
+                    # self.inbound_list[i] = copy.deepcopy(new_inbound_list)
+                    
+                # if i == 16:
+                #     print(self.id,self.unique_pieces[i].id,'-',len(self.valid_list[i]),len(self.inbound_list[i]))
+                #     print('Counters:',counter1,counter2)
             t1 = time.time()
             
             if self.debug == 1:
@@ -615,16 +583,31 @@ class Player:
            
             for i in range(len(self.unique_pieces)):
                 
-                placement_list = config.AllMoves[location[1]][location[0]][i]
+                # placement_list = self.possible_move_list(self.unique_pieces[i],location)
+                # t1 = time.time()
+                # self.valid_list[i] += [v for v in placement_list if len(v.intersection(self.adj_set))>0]
+                # self.inbound_list[i] += [v for v in placement_list if len(v.intersection(self.adj_set))==0]
+                # t1 = time.time()
                 
-      
+                placement_list = AllMoves[location[1]][location[0]][i]
+                
+                t1 = time.time()
+                
+                # if i ==0:
+                #     print(location,[v for v in placement_list if len(v.intersection(self.adj_set))>0 and len(v.difference(self.board_empty))==0])
+                
                 self.valid_list[i] += [v for v in placement_list if len(v.intersection(self.adj_set))>0 and len(v.difference(self.board_empty))==0]
                 self.inbound_list[i] += [v for v in placement_list if len(v.intersection(self.adj_set))==0 and len(v.difference(self.board_empty))==0]
-            
-            t1 = time.time()                
+                t1 = time.time()                
                 
-            if self.debug == 1:
-                print('(1b) Expand board creating sets time taken ms:', round((t1-t0)*1000,3))  
+                # print('(1b) Expand board creating sets time taken ms:', i, round((t1-t0)*1000,3))  
+                
+                
+                # if i == 16:
+                #     print(self.id,self.unique_pieces[i].id,len(placement_list),len(self.valid_list[i]),len(self.inbound_list[i]))
+                        
+                # print('Stats after expanding board:', self.unique_pieces[i].id,len(self.valid_list[i]),len(self.inbound_list[i]))
+        
         
         # Computing the value of a move. Taking a resource gives player credit, but increasing entropy loses points
         self.valid_value = []
@@ -638,52 +621,26 @@ class Player:
         psc = self.board.park_spaces_covered
         
         
-        res_dict = dict()
-        room_dict = dict()
-        
-        for (x,y) in self.board_empty:
-            res_dict[(x,y)]=self.board.state4[y][x]
-            room_dict[(x,y)]=self.board.state3[y][x]
-        
-        
-        # Need to double check that these lists are constructed correctly
-        
-        self.move_counts = []
-        self.move_count = 0
-        
         for i in range(len(self.valid_list)):
             # print(i,self.piece_counts,self.valid_list)
-            # Remove piece count condition
-            if self.board.moves_played>0:
-                moves_i = len(self.valid_list[i])
-                self.move_count += moves_i
-                self.move_counts.append(moves_i)
+            if self.piece_counts[i]>0 and self.board.moves_played>0:
+                self.move_count += len(self.valid_list[i])
             self.valid_value.append([])
             for j in range(len(self.valid_list[i])):
-                this_item = self.valid_list[i][j]
                 this_val1 = 0
                 this_val2 = 0
                 this_val3 = 0
                 this_psc = [0,0,0,0,0]
                 resource_list = []
-                
-                resource_list = [res_dict[x] for x in this_item]
-                
-                this_val1 = sum([self.resource_dict[r] for r in resource_list])
-                # This was inside loop which leads to larger values but seems like an error
-                # Possible to speed up?
-                this_val2 = self.adj_xy_score(self.valid_list[i][j])
-                for l in range(5):
-                    this_psc[l] = sum([1 for x in this_item if room_dict[x] == l+1])
-                    if psc[l]<15 and this_psc[l]+psc[l]==15:
-                        this_val3 = self.next_completion_bonus
-                
-                # for k in self.valid_list[i][j]:
-                #     (x,y)=k
-                    # this_val1 += self.resource_dict[self.board.state4[y][x]]
-                    # resource_list.append(self.board.state4[y][x])
-                    # this_psc[self.board.state3[y][x]-1]+=1
-
+                for k in self.valid_list[i][j]:
+                    (x,y)=k
+                    this_val1 += self.resource_dict[self.board.state4[y][x]]
+                    resource_list.append(self.board.state4[y][x])
+                    this_val2 += self.adj_xy_score(self.valid_list[i][j])
+                    this_psc[self.board.state3[y][x]-1]+=1
+                    for l in range(5):
+                        if psc[l]<15 and this_psc[l]+psc[l]==15:
+                            this_val3 += self.next_completion_bonus
                             # print('I completed an area!')
                 grizzly_value_bonus = 0
                 # After player has expanded the board once, try to make sure he is able to exchange for additional grizzlies
@@ -732,7 +689,7 @@ class Player:
 
 
     # Updates player information after placing a board Piece
-    def update_player(self,piece_counts,flag = 0):
+    def update_player(self,flag = 0):
         
         t0 = time.time()
         
@@ -750,7 +707,7 @@ class Player:
         self.board.this_score = 0
         # print(self.potential)
         if len(self.pieces) + sum(self.has_piece) < 1:
-            # print('Hi!',self.pieces,self.has_piece)
+            # print('Hi!',self.pieces)
             self.potential -= 100
         self.has_expansion = self.board.has_expansion
         self.has_piece = self.board.has_piece
@@ -764,16 +721,9 @@ class Player:
         # if self.grizzly_option == 1:
         #     self.grizzly_option = 0
         
-        if flag == 1:
-            self.create_valid_sets()
-        
         v = [sum(self.piece_counts[0:4])+self.has_piece[0],sum(self.piece_counts[4:8])+self.has_piece[1]]
         
-        g_move_count = sum([x*y for (x,y) in zip(self.move_counts[20:32],piece_counts[20:32])])
-
-        # print('Zip:',g_move_count,self.move_counts[20:32],piece_counts[20:32])
-        
-        if self.move_type == 'play_piece' and min(v)>0 and g_move_count>0:
+        if self.move_type == 'play_piece' and min(v)>0 and self.board.addon_value>1:
             self.grizzly_bonus = self.grizzly * 5
             # print('I got a bonus!')
         else:
@@ -784,6 +734,8 @@ class Player:
             print('(1) Update player time taken ms:', round((t1-t0)*1000,3))
         
         
+        if flag == 1:
+            self.create_valid_sets()
             
         if self.debug == 1:
             t1 = time.time()
@@ -826,8 +778,6 @@ class Player:
                 # Can simplify by using sets
                 if (x,y) in self.board_set or all==1: #and self.board.state3[y][x] > 0:
                     free_spaces.add((x,y))
-                    
-                    
     
         # print('Free spaces:',len(free_spaces))
     
@@ -938,38 +888,16 @@ class Player:
             
             return options
         
-        #boardsize
         elif move_type == 'expand_board':
             
             options = []
             
-            current = game.players[0]
-            
-            if current.board.addon_value == 4:
-                
-                for i in range(4):
-                    for j in range(15):
-                        vc,hc = divmod(j,5)
-                        if self.board.board_adj_map[vc][hc]>0 and (vc==0 or self.board.board_map[vc-1][hc]==0):
-                            if len(game.grizzly_grids[i])>0:
-                                options.append([i,(hc,vc),game.grizzly_grids[i][0]])
-            
-            else:
-                
-                for i in range(2):
-                    for j in range(15):
-                        vc,hc = divmod(j,5)
-                        if self.board.board_adj_map[vc][hc]>0:
-                            if len(game.extra_grids[i])>0:
-                                options.append([i,(hc,vc),game.extra_grids[i][0]])
-            
-            
-            if len(options) == 0:
-                # print('Its pretty empty here!')
-                print(current.board.addon_value,self.board.board_adj_map,self.board.board_map)
-                print(game.grizzly_grids)
-                print(game.extra_grids)
-                input('I should not be here!')
+            for i in range(2):
+                for j in range(6):
+                    vc,hc = divmod(j,3)
+                    if self.board.board_adj_map[vc][hc]>0:
+                        if len(game.extra_grids[i])>0:
+                            options.append([i,(hc,vc),game.extra_grids[i][0]])
             
             # print(options)
             
@@ -1088,13 +1016,9 @@ class Player:
             new_options = [x for _, x in sorted(zip(scores, options), key=lambda pair: -pair[0])]
                     
             if len(new_options) == 0:
-                for i in range(4):
-                    if game.piece_counts[3-i]>0:
-                        new_options.append(3-i)
-                # print('Its pretty empty here!')
-                # new_options.append(0)
-                # new_options.append(1)
-                
+                print('Its pretty empty here!')
+                new_options.append(0)
+                new_options.append(1)
                     
             return new_options[0:4]
                 
@@ -1163,8 +1087,6 @@ class Player:
 
         elif move_type == 'play_piece':
             
-            t0 = time.time()
-            
             visited = set()
             pieces_unique = []
             
@@ -1212,19 +1134,7 @@ class Player:
                     scores.append(self.valid_value[pindex][i]+p.score+0.5*p.size)
                                         
                     
-            debug_placements = [(x.id,x.points,y) for y, x in sorted(zip(scores, placements), key=lambda pair: -pair[0])]
-                    
             new_placements = [x for _, x in sorted(zip(scores, placements), key=lambda pair: -pair[0])]
-            
-            # print('Suggested moves:')
-            # for i in range(min(5,len(debug_placements))):
-            #     print(debug_placements[i])
-            # print('--')
-            
-            t1 = time.time()
-            
-            if self.debug == 1:
-                print('(1) Evaluated and ranked moves', round((t1-t0)*1000,3),game.move_type,len(new_placements))
             
             # print([p.points for p in placements])
             # print(scores)
@@ -1251,7 +1161,7 @@ class Player:
         if (game.move_type == 'play_piece' and game.players[0].board.moves_played>0) or (game.move_type in ['add_piece','add_piece_forced','add_grizzly']):
             candidate_moves = self.possible_moves_ranked(pieces,game,override,simplified)
             # Pruning
-            candidate_moves = candidate_moves[0:4]
+            candidate_moves = candidate_moves[0:3]
             # print (candidate_moves[0].points)
             # time.sleep(100)
         else:
@@ -1267,12 +1177,7 @@ class Player:
 
 class Blokus:
     def __init__(self, players, all_pieces, grizzly = 0):
-        
-        self.debug = 0
-        
         self.grizzly = grizzly
-        
-        
         
         
         self.players = players; 
@@ -1291,15 +1196,13 @@ class Blokus:
             # input('Stop')
             
             # Build placement cache
-           
-        config.AllMoves = [[[],[],[],[],[]],[[],[],[],[],[]],[[],[],[],[],[]]]
-        p = self.players[0]
-        for j in range(15):
-            vc,hc = divmod(j,5)
-            for i in range(len(self.unique_pieces)):
-                all_candidates = p.possible_move_list(self.unique_pieces[i],(hc,vc),1)
-                # print(i,j,len(all_candidates))
-                config.AllMoves[vc][hc].append(all_candidates)
+            
+            for j in range(6):
+                vc,hc = divmod(j,3)
+                for i in range(len(self.unique_pieces)):
+                    all_candidates = p.possible_move_list(self.unique_pieces[i],(hc,vc),1)
+                    # print(len(all_candidates))
+                    AllMoves[vc][hc].append(all_candidates)
             # input('Stop')
             
         # print('Row 0, Col 0',AllMoves[0][0][0])
@@ -1314,30 +1217,26 @@ class Blokus:
         self.extra_grids = random.sample(grids.addon_grids,len(grids.addon_grids))
         self.extra_grids = [self.extra_grids[0:6],self.extra_grids[6:12]]
         
-        # Will be modified later
-        self.grizzly_grids = copy.deepcopy(grids.grizzly_grids)
-        
-        self.extra_grids_display = [grid[0] for grid in self.extra_grids if len(grid)>0] + [grid[0] for grid in self.grizzly_grids if len(grid)>0]
+        self.extra_grids_display = [grid[0] for grid in self.extra_grids if len(grid)>0]
         
         # print(self.extra_grids_display)
         
         # self.extra_grids[0] = random.sample(self.extra_grids[0],len(self.extra_grids[0]))
         # self.extra_grids[1] = random.sample(self.extra_grids[1],len(self.extra_grids[1]))
         
-        #boardsize
         for p in self.players:
             p.grizzly = self.grizzly
             p.board.grizzly = self.grizzly
             start = self.starting_grids.pop(0)
             for j in range(4):
-                p.board.state3[8+j][8:12]=[1,1,1,1]
-                p.board.state4[8+j][8:12]=start[j]
+                p.board.state3[4+j][4:8]=[1,1,1,1]
+                p.board.state4[4+j][4:8]=start[j]
                 for i in range(4):
                     if start[j][i] == -1:
                         # print('-1 found')
-                        p.board.state3[8+j][8+i] = 0
+                        p.board.state3[4+j][4+i] = 0
                     else:
-                        p.board_set.add((8+i,8+j))
+                        p.board_set.add((4+i,4+j))
         
         # print(p.board.state3)
         # time.sleep(100)
@@ -1369,10 +1268,6 @@ class Blokus:
             self.area_completion_bonus = [20,18,16,14,12,10,8,6,4,2]
         else:
             self.area_completion_bonus = [16,14,12,10,8,6,4,2]
-            
-        # self.achievement_bonus = [[8,5],[8,5],[8,5],[8,5],[8,5],[8,5],[8,5],[8,5],[8,5],[8,5],[8,5],[8,5],[8,5],[8,5],[8,5],[8,5]]
-        
-        self.achievement_bonus = [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]]
         
         
         self.move_type = 'play_piece'
@@ -1517,14 +1412,9 @@ class Blokus:
         
         if self.move_type == 'expand_board':
             current.board.update(current.id,self.move_type, proposal,1)
-            # Indexed differently from possible_moves since the moves have already been made
-            if current.board.addon_value == 5:    
-                self.grizzly_grids[proposal[0]].pop(0)
-            else:
-                self.extra_grids[proposal[0]].pop(0)
-                
-            self.extra_grids_display = [grid[0] for grid in self.extra_grids if len(grid)>0] + [grid[0] for grid in self.grizzly_grids if len(grid)>0]
-            current.update_player(self.piece_counts,1);
+            self.extra_grids[proposal[0]].pop(0)
+            self.extra_grids_display = [grid[0] for grid in self.extra_grids if len(grid)>0]
+            current.update_player(1);
             #print('Taking a break...')
             #time.sleep(1000)
             
@@ -1569,7 +1459,7 @@ class Blokus:
                 
                 # print('Current resource_count:',current.has_piece)
                 
-                current.update_player(self.piece_counts,flag);                     
+                current.update_player(flag);                     
                 # print(time.time()-t)
 
             else: # end the game if an invalid move is proposed
@@ -1582,11 +1472,6 @@ class Blokus:
             input("Press Enter to continue...")
                     
             # put the current player to the back of the queue
-            
-        for i in range(len(current.board.new_achievements_completed)):
-            this_index = current.board.new_achievements_completed[i]
-            current.board.score_breakdown[2] += self.achievement_bonus[this_index].pop(0)
-            
     
     
     def play(self):
@@ -1606,8 +1491,7 @@ class Blokus:
         # print('Player:',current.id,self.move_type,current.has_piece)
         
         if self.rounds == 0:
-            # print(Omino_map)
-            render(firstp,secondp,firstp.pieces,secondp.pieces,self.pieces_display,self.extra_grids_display,self.all_pieces)
+            render(firstp,secondp,firstp.pieces,secondp.pieces,self.pieces_display,self.extra_grids_display)
                         
                           
         proposal = current.next_move(self); # get the next move based on
@@ -1616,9 +1500,8 @@ class Blokus:
         self.update_state(proposal)
 
 
-        # print('Potential:',self.move_type,self.players[0].id,self.players[0].board.moves_played,self.players[0].board.potential_breakdown)
 
-        render(firstp,secondp,firstp.pieces,secondp.pieces,self.pieces_display,self.extra_grids_display,self.all_pieces)        
+        render(firstp,secondp,firstp.pieces,secondp.pieces,self.pieces_display,self.extra_grids_display)        
 
         # print('Stats before switching:',current.id,self.players,current.has_expansion,current.has_piece)
         # print('Stats by player:',self.players[0].has_expansion,self.players[0].has_piece,self.players[1].has_expansion,self.players[1].has_piece)
@@ -1664,19 +1547,11 @@ class Blokus:
 
     def make_move(self,move,state,flag=1):
         
-        t0 = time.time()
         
-        
-        # newboard = json.loads(json.dumps(state))
-        newboard = pickle.loads(pickle.dumps(state, -1))
-        # newboard = copy.deepcopy(state)
+        newboard = copy.deepcopy(state)
         current = newboard.to_move;
         current.move_type = newboard.game.move_type
         current.next_completion_bonus = newboard.game.area_completion_bonus[0]
-        
-        t1 = time.time()  
-        if self.debug == 1:
-            print('(1) Update state (deepcopy board) ms:',round((t1-t0)*1000,3),state.game.move_type)
 
         proposal = move
                                             
@@ -1697,27 +1572,16 @@ class Blokus:
                 
         else:      
             newboard.game.move_type = 'expand_board'
-         
-            
-        # t1 = time.time()
-        
-        t1 = time.time()    
-        if self.debug == 1:
-            print('(2) Update state (update player/board) ms:',round((t1-t0)*1000,3),state.game.move_type)            
+          
         return newboard
 
 
-    def successors(self, state, utility_param, flag=1):
+    def successors(self, state, flag=1):
         "Return a list of legal (move, state) pairs."
         # find and return up to MovesToConsider possible moves as successors
         
-        
-        t0 = time.time()
-        
         m = [(move, self.make_move(move, state, flag))
                 for move in state.to_move.possible_moves_pruned([p[0] for p in state.game.all_pieces if len(p)>0], state.game,0,1)]
-        
-        m0 = len(m)
         
         # Pruning to 5 options to make the search space smaller - doesn't work well with or without pruning
         
@@ -1727,7 +1591,7 @@ class Blokus:
         if state.game.move_type in ('play_piece'):
             u = []     
             for mm in m:
-                u.append(self.utility(mm[1],game_progress,utility_param))
+                u.append(self.utility(mm[1],game_progress))
             f_1 = {}         
             # initializing blank list
             new_m = []
@@ -1739,34 +1603,11 @@ class Blokus:
             # Element addition in the list
             for i in f_lst.keys():
                 new_m.append(i)
-                
-            if state.game.players[0].board.moves_played == 0:
-                m = new_m[0:5]
-            else:
-                m = new_m[0:2]
+            m = new_m[0:2]
         elif state.game.move_type == 'expand_board':
-            
-            u = []
-            # Append negative utility to help sorting
-            for mm in m:
-                u.append(-self.utility(mm[1],game_progress,utility_param))
-            
-            u, m = zip(*sorted(zip(u, m)))
-            
-            # print('Expansion moves:')
-            # print(m)
-            # print(u)
-            # print('---')
-            
             m = m[0:3]
         else:
             m = m[0:1]
-            
-        t1 = time.time()
-        
-        if self.debug == 1:
-            print('(1) Successors identified and ranked in:', round((t1-t0)*1000,3),state.game.move_type,m0,len(m))
-            print('----------')
             
             
 
@@ -1791,7 +1632,7 @@ class Blokus:
             return False
 
 
-    def utility(self, state, progress, utility_param):
+    def utility(self, state, progress):
         this_player = state.p1
         opponent = state.p2
         
@@ -1818,27 +1659,12 @@ class Blokus:
             resource_value += 4
         
         resource_value += state.p1.grizzly_bonus 
-        
-        if utility_param == 0:
-            cp_param = 1
-            score_param = 0.3
-            hole_param = 1
-            expand_param = 0.75
-        else:
-            cp_param = 0.5
-            score_param = 0.3
-            hole_param = 1
-            expand_param = 0.75
-            
             
 
         # Grizzly version
         if state.to_move.board.moves_played <100:
-        #     total_breakdown = [(0.8-progress*0.05)*state.p1.hand_score,state.p1.score-0.3*state.p1.score_breakdown[0],sum([p.size for p in state.p1.pieces]),\
-        #                             state.p1.board.potential_breakdown[1],state.p1.board.potential_breakdown[4],0.75*state.p1.board.resource_value] 
-            total_breakdown = [state.p1.score-score_param*state.p1.score_breakdown[0],
-                               cp_param*state.p1.board.potential_breakdown[1],state.p1.board.potential_breakdown[3],hole_param*state.p1.board.potential_breakdown[4],resource_value,
-                               expand_param*len(state.p1.board_empty),len(state.p1.board_occupied)] 
+            total_breakdown = [state.p1.score,
+                               state.p1.board.potential_breakdown[1],0.5*state.p1.board.potential_breakdown[3],state.p1.board.potential_breakdown[4],resource_value] 
         else:        
             total_breakdown = [state.p1.score]
             
@@ -1846,8 +1672,7 @@ class Blokus:
             
         #print(total_breakdown)
         
-        total = sum(total_breakdown)
-
+        total = sum(total_breakdown) + 0.5*len(state.p1.board_empty) + len(state.p1.board_occupied)
         # print(state.game.move_type,state.p1.pieces,total)
         
         return total
@@ -1929,37 +1754,24 @@ def multi_run(repeat, one, two):
         all_pieces[17].append(piece.E10());
         all_pieces[18].append(piece.E11());
         all_pieces[19].append(piece.E12());
-        
-        ilist = random.sample(list(range(108)),12)
-        
-        # global Omino_map
-        config.Omino_map = []
-        
-        for i in range(12):
-            fstring = 'all_pieces['+str(i+20)+'].append(piece.GR'+str(i+1)+'('+str(ominoes[ilist[i]])+','+str(omino_scores[ilist[i]])+'))'
-            # print(fstring)
-            eval(fstring)
-            config.Omino_map.append(omino_map[ilist[i]])
-            
-        # print(len(Omino_map))
 
-        # all_pieces[20].append(piece.GR1());
-        # all_pieces[21].append(piece.GR2());
-        # all_pieces[22].append(piece.GR3());
-        # all_pieces[23].append(piece.GR4());
-        # all_pieces[24].append(piece.GR5());
-        # all_pieces[25].append(piece.GR6());
-        # all_pieces[26].append(piece.GR7());
-        # all_pieces[27].append(piece.GR8());
-        # all_pieces[28].append(piece.GR9());
-        # all_pieces[29].append(piece.GR10());
-        # all_pieces[30].append(piece.GR11());
-        # all_pieces[31].append(piece.GR12());
+        all_pieces[20].append(piece.GR1());
+        all_pieces[21].append(piece.GR2());
+        all_pieces[22].append(piece.GR3());
+        all_pieces[23].append(piece.GR4());
+        all_pieces[24].append(piece.GR5());
+        all_pieces[25].append(piece.GR6());
+        all_pieces[26].append(piece.GR7());
+        all_pieces[27].append(piece.GR8());
+        all_pieces[28].append(piece.GR9());
+        all_pieces[29].append(piece.GR10());
+        all_pieces[30].append(piece.GR11());
+        all_pieces[31].append(piece.GR12());
 
-        #boardsize
-        board = Board(12, 20, 0);
-        board1 = Board(12, 20, 0);
-        board2 = Board(12, 20, 0);
+
+        board = Board(8, 12, 0);
+        board1 = Board(8, 12, 0);
+        board2 = Board(8, 12, 0);
 
         P1 = Player(1, board1, one) # first player
         P2 = Player(2, board2, two) # second player
@@ -2072,8 +1884,8 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    Games = 100
-    multi_run(Games, Human_Player, PaddingtonBasic);
+    Games = 10
+    multi_run(Games, Paddington, PaddingtonPlus);
 
 if __name__ == '__main__':
     main();

@@ -866,6 +866,7 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
+    Games = 100
     multi_run(Games, Greedy_Player, Greedy_Player);
 
 if __name__ == '__main__':

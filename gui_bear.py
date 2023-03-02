@@ -13,6 +13,8 @@ Senay - GUI Implementation
 # Import the pygame module
 import pygame
 import copy
+import config
+# import numpy as np
 
 Names = ['G1','G2','G3','G4','A1','A2','A3','A4','E1','E2','E3','E4','E5','E6','E7','E8','E9','E10','E11','E12',\
          'GR1','GR2','GR3','GR4','GR5','GR6','GR7','GR8','GR9','GR10','GR11','GR12'] #'TR1','TR2','TR3','TR4']
@@ -47,6 +49,9 @@ Shapes = [[[0],[0],[1],[0],[0]],[[0],[1],[1],[0],[0]],[[0,0],[1,0],[1,1],[0,0],[
             [[0,0,0],[1,1,1],[0,1,0],[1,1,1],[0,0,0]],[[1,1,1],[1,0,0],[1,1,1],[0,0,0],[0,0,0]],[[0,0,0],[1,1,1],[1,0,1],[1,1,0],[0,0,0]],\
             [[0,0,0],[1,1,1],[1,1,1],[0,1,0],[0,0,0]],[[0,0,0],[1,1,0],[1,1,1],[0,1,1],[0,0,0]],[[1,1],[1,0],[1,1],[1,1],[0,0]]]
 
+    
+# Shapes = Shapes[0:20]
+    
 # Initialize pygame
 pygame.init()
 
@@ -60,7 +65,7 @@ from pygame.locals import (
 
 # Define constants for the screen width and height
 SCREEN_WIDTH = 1320
-SCREEN_HEIGHT = 900
+SCREEN_HEIGHT = 1100
 
 # Create the screen object
 # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
@@ -79,7 +84,11 @@ def truncId(piece):
         return piece.id
 
 
-def render(p1,p2,p1_pieces,p2_pieces, game_pieces,extra_grids):
+def render(p1,p2,p1_pieces,p2_pieces, game_pieces,extra_grids,all_pieces):
+    
+    global Shapes
+    Shapes = Shapes[0:20] + config.Omino_map
+    # print(len(Shapes))
     
     pygame.draw.rect(screen,(255, 255, 255), (0, 0, 1400, 1120), 0) 
     
@@ -97,16 +106,18 @@ def render(p1,p2,p1_pieces,p2_pieces, game_pieces,extra_grids):
         elif event.type == QUIT:
             pygame.exit()
     
+    
+    size = 30
+    
     x,y = 0,0
-    pad = 3
+    pad = int(size/15)
     pads = 0
-    size = 50
     psize = 20
     
-    bsize = 10
-    bpad = (size-bsize)/2
+    bsize = int(size/3)
+    bpad = int((size-bsize)/2)
     
-    pad2 = 13
+    pad2 = int(size/4)
     
     xoffset = 20
     
@@ -117,13 +128,18 @@ def render(p1,p2,p1_pieces,p2_pieces, game_pieces,extra_grids):
 
     temp_counter = 0
 
+    #boardsize
+    #adaptible size
+
+    config.params = []
+
     for player in [p1,p2]:
         
         
         
-        y_adj = 250
+        y_adj = 310
         if temp_counter >0:
-            y_adj = 250
+            y_adj = 310
             x_adj = 700
         
         
@@ -133,23 +149,78 @@ def render(p1,p2,p1_pieces,p2_pieces, game_pieces,extra_grids):
         black = (0,0,0)
         score = copy.deepcopy(player.score_breakdown)
         gi_string = str(sum(score))+' ' +str(score)
-        font1 = pygame.font.SysFont('Helvetica.ttc', 48)
+        font1 = pygame.font.SysFont("helveticaneue", 40)
+        # font1 = pygame.font.SysFont('Helvetica.ttc', 48)
         img1 = font1.render(gi_string, True, black)
-        screen.blit(img1, (x_adj,790))
+        screen.blit(img1, (x_adj,990))
 
         black = (0,0,0)
         score = copy.deepcopy(player.has_piece)
         # score = copy.deepcopy(player.board.hole_stats)
         # score = [truncId(p) for p in player.pieces]
         gi_string = str(score)
-        font1 = pygame.font.SysFont('Helvetica.ttc', 48)
+        font1 = pygame.font.SysFont('helveticaneue', 40)
         img1 = font1.render(gi_string, True, black)
-        screen.blit(img1, (x_adj,840))
+        screen.blit(img1, (x_adj,1040))
         
         board = boards.state
         pieces = boards.state2
         rooms = boards.state3
         items = boards.state4
+        
+        xs = []
+        ys = []
+        for i in range(len(rooms)):
+            for j in range(len(rooms[0])):
+                if rooms[i][j]>0:
+                    ys.append(i)
+                    xs.append(j)
+            
+        min_x,max_x,min_y,max_y = min(xs),max(xs),min(ys),max(ys)
+        xdim = max_x-min_x+1
+        ydim = max_y-min_y+1
+        
+        size = int(min(75,600/xdim,600/ydim))
+        
+        xtemp = int((600-size*xdim)/2)
+        ytemp = int((600-size*ydim)/2)
+        
+        x_adj += xtemp
+        y_adj += ytemp
+        
+        
+        config.params.append([size,x_adj,y_adj,min_x,min_y])
+        
+        x,y = 0,0
+        pad = int(size/15)
+        pads = 0
+        psize = 20
+        
+        bsize = int(size/3)
+        bpad = int((size-bsize)/2)
+        
+        pad2 = int(size/4)
+        
+        epad = int(size/10)
+        
+        xoffset = 20
+        
+        # [board[i][min_x:max_x+1] for i in range(min_y,max_y+1)]
+        
+        # print(board)
+        
+        board = copy.deepcopy([board[i][min_x:max_x+1] for i in range(min_y,max_y+1)])
+        pieces = copy.deepcopy([pieces[i][min_x:max_x+1] for i in range(min_y,max_y+1)])
+        rooms = copy.deepcopy([rooms[i][min_x:max_x+1] for i in range(min_y,max_y+1)])
+        items = copy.deepcopy([items[i][min_x:max_x+1] for i in range(min_y,max_y+1)])
+        
+        # print(min_x,max_x,min_y,max_y)
+        # print(board)
+        # print(pieces)
+        # print(rooms)
+        # print(items)
+        
+        
         
         
         hsize = len(board)
@@ -219,8 +290,8 @@ def render(p1,p2,p1_pieces,p2_pieces, game_pieces,extra_grids):
                     pygame.draw.rect(screen,this_color, (x+bpad-t, y+bpad-t, size-2*bpad+2*t, size-2*bpad+2*t), 0)
                 elif this_item in [10] and this_loc == 0:
                     this_color = black
-                    pygame.draw.rect(screen,this_color, (x+bpad+2, y+pad2, size-2*bpad-4, size-2*pad2), 0)
-                    pygame.draw.rect(screen,this_color, (x+pad2, y+bpad+2, size-2*pad2, size-2*bpad-4), 0)
+                    pygame.draw.rect(screen,this_color, (x+bpad+epad, y+pad2, size-2*bpad-2*epad, size-2*pad2), 0)
+                    pygame.draw.rect(screen,this_color, (x+pad2, y+bpad+epad, size-2*pad2, size-2*bpad-2*epad), 0)
                 else:
                     # pygame.draw.rect(screen, (255,255,255), (x+pad, y+pad, size-2*pad, size-2*pad), 0)   
                     useless = 0
@@ -294,6 +365,7 @@ def render(p1,p2,p1_pieces,p2_pieces, game_pieces,extra_grids):
     x = 20
     # print(len(p1_pieces))                    
     for a in range(len(game_pieces)):
+        # print(game_pieces[a])
         this_piece = truncId(game_pieces[a])
         this_color = game_pieces[a].color
         if this_piece[0:2]=='GR' and u == 0:
@@ -309,6 +381,17 @@ def render(p1,p2,p1_pieces,p2_pieces, game_pieces,extra_grids):
             xminus = len(this_shape[0])
             x+=(xminus+1)*psize
             # print(this_shape)
+            
+            if game_pieces[a].score>0:
+                gi_string = str(this_piece)+' ('+str(game_pieces[a].score)+')'
+            else:
+                gi_string = str(this_piece)
+            font1 = pygame.font.SysFont("helveticaneue", 14)
+            # font1 = pygame.font.SysFont('Helvetica.ttc', 48)
+            img1 = font1.render(gi_string, True, black)
+            screen.blit(img1, (x-int(len(this_shape[0])/2*psize)-4*len(gi_string),y-psize))
+            
+            
             for i in range(len(this_shape)):
                 x-=len(this_shape[0])*psize
                 for j in range(len(this_shape[i])):

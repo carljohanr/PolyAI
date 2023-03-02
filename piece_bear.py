@@ -332,145 +332,305 @@ class E12(Piece):
     def set_points(self, x, y):
         self.points = [(x, y),(x,y+1),(x+1,y),(x+1,y+1),(x+2,y)];
         
-        
 class GR1(Piece):
-    def __init__(self):
+    def __init__(self,shape,score):
         self.size = 7;
         self.color=6
         self.animal = 'Grizzly'
-        self.score = 10
+        self.score = score
+        self.shape = shape
         self.id = 'GR1';
         
     def set_points(self, x, y):
-        self.points = [(x, y),(x+1,y),(x+2,y),(x+3,y),(x+1,y+1),(x+1,y+2),(x+1,y+3)];
+        self.points = [(x+a,y+b) for (a,b) in self.shape];
 
         
-class GR2(Piece):
-    def __init__(self):
+
+class GR1(Piece):
+    def __init__(self,shape,score):
         self.size = 7;
         self.color=6
         self.animal = 'Grizzly'
-        self.score = 10
+        self.score = score
+        self.shape = shape
+        self.id = 'GR1';
+        
+    def set_points(self, x, y):
+        self.points = [(x+a,y+b) for (a,b) in self.shape];        
+
+class GR2(Piece):
+    def __init__(self,shape,score):
+        self.size = 7;
+        self.color=6
+        self.animal = 'Grizzly'
+        self.score = score
+        self.shape = shape
         self.id = 'GR2';
         
     def set_points(self, x, y):
-        self.points = [(x, y),(x+1,y),(x+1,y+1),(x+2,y+1),(x+2,y+2),(x+3,y+2),(x+3,y+3)];
+        self.points = [(x+a,y+b) for (a,b) in self.shape];
         
-
 class GR3(Piece):
-    def __init__(self):
+    def __init__(self,shape,score):
         self.size = 7;
         self.color=6
         self.animal = 'Grizzly'
-        self.score = 10
+        self.score = score
+        self.shape = shape
         self.id = 'GR3';
         
     def set_points(self, x, y):
-        self.points = [(x, y+1),(x+1,y),(x+1,y+1),(x+2,y+1),(x+2,y+2),(x+2,y+3),(x+3,y+2)];
+        self.points = [(x+a,y+b) for (a,b) in self.shape];
         
 class GR4(Piece):
-    def __init__(self):
+    def __init__(self,shape,score):
         self.size = 7;
         self.color=6
         self.animal = 'Grizzly'
-        self.score = 9
+        self.score = score
+        self.shape = shape
         self.id = 'GR4';
         
     def set_points(self, x, y):
-        self.points = [(x, y),(x,y+1),(x,y+2),(x,y+3),(x+1,y+1),(x+2,y),(x+2,y+1)];
+        self.points = [(x+a,y+b) for (a,b) in self.shape];
         
 class GR5(Piece):
-    def __init__(self):
+    def __init__(self,shape,score):
         self.size = 7;
         self.color=6
         self.animal = 'Grizzly'
-        self.score = 9
+        self.score = score
+        self.shape = shape
         self.id = 'GR5';
         
     def set_points(self, x, y):
-        self.points = [(x, y),(x,y+1),(x,y+2),(x,y+3),(x+1,y),(x+2,y),(x+1,y+3)];
-        
+        self.points = [(x+a,y+b) for (a,b) in self.shape];
         
 class GR6(Piece):
-    def __init__(self):
+    def __init__(self,shape,score):
         self.size = 7;
         self.color=6
         self.animal = 'Grizzly'
-        self.score = 9
+        self.score = score
+        self.shape = shape
         self.id = 'GR6';
         
     def set_points(self, x, y):
-        self.points = [(x, y),(x,y+1),(x,y+2),(x-1,y+2),(x-1,y+3),(x+1,y+2),(x+1,y+3)];
-        
+        self.points = [(x+a,y+b) for (a,b) in self.shape];
         
 class GR7(Piece):
-    def __init__(self):
+    def __init__(self,shape,score):
         self.size = 7;
         self.color=6
         self.animal = 'Grizzly'
-        self.score = 8
+        self.score = score
+        self.shape = shape
         self.id = 'GR7';
         
     def set_points(self, x, y):
-        self.points = [(x, y),(x,y+1),(x,y+2),(x+1,y+1),(x+2,y),(x+2,y+1),(x+2,y+2)];
-        
+        self.points = [(x+a,y+b) for (a,b) in self.shape];
         
 class GR8(Piece):
-    def __init__(self):
+    def __init__(self,shape,score):
         self.size = 7;
         self.color=6
         self.animal = 'Grizzly'
-        self.score = 8
+        self.score = score
+        self.shape = shape
         self.id = 'GR8';
         
     def set_points(self, x, y):
-        self.points = [(x, y),(x,y+1),(x,y+2),(x+1,y),(x+2,y),(x+2,y+1),(x+2,y+2)];
-        
+        self.points = [(x+a,y+b) for (a,b) in self.shape];
         
 class GR9(Piece):
-    def __init__(self):
+    def __init__(self,shape,score):
         self.size = 7;
         self.color=6
         self.animal = 'Grizzly'
-        self.score = 8
+        self.score = score
+        self.shape = shape
         self.id = 'GR9';
         
     def set_points(self, x, y):
-        self.points = [(x, y),(x,y+1),(x,y+2),(x+1,y),(x+2,y),(x+1,y+2),(x+2,y+1)];
-        
-        
+        self.points = [(x+a,y+b) for (a,b) in self.shape];
         
 class GR10(Piece):
-    def __init__(self):
+    def __init__(self,shape,score):
         self.size = 7;
         self.color=6
         self.animal = 'Grizzly'
-        self.score = 7
+        self.score = score
+        self.shape = shape
         self.id = 'GR10';
         
     def set_points(self, x, y):
-        self.points = [(x, y),(x,y+1),(x,y+2),(x+1,y),(x+1,y+1),(x+1,y+2),(x+2,y+1)];
-        
+        self.points = [(x+a,y+b) for (a,b) in self.shape];
         
 class GR11(Piece):
-    def __init__(self):
+    def __init__(self,shape,score):
         self.size = 7;
         self.color=6
         self.animal = 'Grizzly'
-        self.score = 7
+        self.score = score
+        self.shape = shape
         self.id = 'GR11';
         
     def set_points(self, x, y):
-        self.points = [(x, y),(x,y+1),(x+2,y+2),(x+1,y),(x+1,y+1),(x+1,y+2),(x+2,y+1)];
-        
-        
+        self.points = [(x+a,y+b) for (a,b) in self.shape];
+
 class GR12(Piece):
-    def __init__(self):
+    def __init__(self,shape,score):
         self.size = 7;
         self.color=6
         self.animal = 'Grizzly'
-        self.score = 7
+        self.score = score
+        self.shape = shape
         self.id = 'GR12';
         
     def set_points(self, x, y):
-        self.points = [(x, y),(x,y+1),(x,y+2),(x,y+3),(x+1,y),(x+1,y+1),(x+1,y+3)];
+        self.points = [(x+a,y+b) for (a,b) in self.shape];
+        
+# Saving original grizzly definitions   
+ 
+# class GR1(Piece):
+#     def __init__(self):
+#         self.size = 7;
+#         self.color=6
+#         self.animal = 'Grizzly'
+#         self.score = 10
+#         self.id = 'GR1';
+        
+#     def set_points(self, x, y):
+#         self.points = [(x, y),(x+1,y),(x+2,y),(x+3,y),(x+1,y+1),(x+1,y+2),(x+1,y+3)];
+
+        
+# class GR2(Piece):
+#     def __init__(self):
+#         self.size = 7;
+#         self.color=6
+#         self.animal = 'Grizzly'
+#         self.score = 10
+#         self.id = 'GR2';
+        
+#     def set_points(self, x, y):
+#         self.points = [(x, y),(x+1,y),(x+1,y+1),(x+2,y+1),(x+2,y+2),(x+3,y+2),(x+3,y+3)];
+        
+
+# class GR3(Piece):
+#     def __init__(self):
+#         self.size = 7;
+#         self.color=6
+#         self.animal = 'Grizzly'
+#         self.score = 10
+#         self.id = 'GR3';
+        
+#     def set_points(self, x, y):
+#         self.points = [(x, y+1),(x+1,y),(x+1,y+1),(x+2,y+1),(x+2,y+2),(x+2,y+3),(x+3,y+2)];
+        
+# class GR4(Piece):
+#     def __init__(self):
+#         self.size = 7;
+#         self.color=6
+#         self.animal = 'Grizzly'
+#         self.score = 9
+#         self.id = 'GR4';
+        
+#     def set_points(self, x, y):
+#         self.points = [(x, y),(x,y+1),(x,y+2),(x,y+3),(x+1,y+1),(x+2,y),(x+2,y+1)];
+        
+# class GR5(Piece):
+#     def __init__(self):
+#         self.size = 7;
+#         self.color=6
+#         self.animal = 'Grizzly'
+#         self.score = 9
+#         self.id = 'GR5';
+        
+#     def set_points(self, x, y):
+#         self.points = [(x, y),(x,y+1),(x,y+2),(x,y+3),(x+1,y),(x+2,y),(x+1,y+3)];
+        
+        
+# class GR6(Piece):
+#     def __init__(self):
+#         self.size = 7;
+#         self.color=6
+#         self.animal = 'Grizzly'
+#         self.score = 9
+#         self.id = 'GR6';
+        
+#     def set_points(self, x, y):
+#         self.points = [(x, y),(x,y+1),(x,y+2),(x-1,y+2),(x-1,y+3),(x+1,y+2),(x+1,y+3)];
+        
+        
+# class GR7(Piece):
+#     def __init__(self):
+#         self.size = 7;
+#         self.color=6
+#         self.animal = 'Grizzly'
+#         self.score = 8
+#         self.id = 'GR7';
+        
+#     def set_points(self, x, y):
+#         self.points = [(x, y),(x,y+1),(x,y+2),(x+1,y+1),(x+2,y),(x+2,y+1),(x+2,y+2)];
+        
+        
+# class GR8(Piece):
+#     def __init__(self):
+#         self.size = 7;
+#         self.color=6
+#         self.animal = 'Grizzly'
+#         self.score = 8
+#         self.id = 'GR8';
+        
+#     def set_points(self, x, y):
+#         self.points = [(x, y),(x,y+1),(x,y+2),(x+1,y),(x+2,y),(x+2,y+1),(x+2,y+2)];
+        
+        
+# class GR9(Piece):
+#     def __init__(self):
+#         self.size = 7;
+#         self.color=6
+#         self.animal = 'Grizzly'
+#         self.score = 8
+#         self.id = 'GR9';
+        
+#     def set_points(self, x, y):
+#         self.points = [(x, y),(x,y+1),(x,y+2),(x+1,y),(x+2,y),(x+1,y+2),(x+2,y+1)];
+        
+        
+        
+# class GR10(Piece):
+#     def __init__(self):
+#         self.size = 7;
+#         self.color=6
+#         self.animal = 'Grizzly'
+#         self.score = 7
+#         self.id = 'GR10';
+        
+#     def set_points(self, x, y):
+#         self.points = [(x, y),(x,y+1),(x,y+2),(x+1,y),(x+1,y+1),(x+1,y+2),(x+2,y+1)];
+        
+        
+# class GR11(Piece):
+#     def __init__(self):
+#         self.size = 7;
+#         self.color=6
+#         self.animal = 'Grizzly'
+#         self.score = 7
+#         self.id = 'GR11';
+        
+#     def set_points(self, x, y):
+#         self.points = [(x, y),(x,y+1),(x+2,y+2),(x+1,y),(x+1,y+1),(x+1,y+2),(x+2,y+1)];
+        
+        
+# class GR12(Piece):
+#     def __init__(self):
+#         self.size = 7;
+#         self.color=6
+#         self.animal = 'Grizzly'
+#         self.score = 7
+#         self.id = 'GR12';
+        
+#     def set_points(self, x, y):
+#         # self.points = [(x, y),(x,y+1),(x,y+2),(x,y+3),(x,y+4),(x,y+5),(x,y+6)];
+#         self.points = [(x, y),(x,y+1),(x,y+2),(x,y+3),(x+1,y),(x+1,y+1),(x+1,y+3)];

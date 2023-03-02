@@ -1066,13 +1066,13 @@ def multi_run(repeat, one, two):
             all_pieces.append(piece.RT4(6,i));
             all_pieces.append(piece.RT5(6,i));
 
-        dm = divmod(i,50)[0]
-        d1 = [0.1,0.2,0.3,0.4,0.5,0.2,0.2,0.2,0.2,0.2]
-        d2 = [0.2,0.2,0.2,0.2,0.2,0.1,0.2,0.3,0.4,0.5]
+        # dm = divmod(i,50)[0]
+        # d1 = [0.1,0.2,0.3,0.4,0.5,0.2,0.2,0.2,0.2,0.2]
+        # d2 = [0.2,0.2,0.2,0.2,0.2,0.1,0.2,0.3,0.4,0.5]
 
         board = Board(9, 22, 0, 0);
-        board1 = Board(9, 22, 0,-0.1,d1[dm]);
-        board2 = Board(9, 22, 0,-0.1,d2[dm]);
+        board1 = Board(9, 22, 1,-0.1,0.2);
+        board2 = Board(9, 22, 2,-0.1,0.2);
 
         P1 = Player(1, board1, one) # first player
         P2 = Player(2, board2, two) # second player
@@ -1195,8 +1195,8 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    Games = 500
-    multi_run(Games, Greedy_Player, Greedy_Player);
+    Games = 50
+    multi_run(Games, Catbert, Greedy_Player);
 
 if __name__ == '__main__':
     main();

@@ -41,7 +41,7 @@ def cpenalty(grid,grid3):
             if in_bounds(i-1,j,nrow,ncol)==0 or grid3[i-1][j]==0:
                 val2 = 1
             else: 
-                val2 = grid[i][j]
+                val2 = grid[i-1][j]
                 
             cpenalty+=abs(val1-val2)
 
@@ -55,7 +55,7 @@ def cpenalty(grid,grid3):
             if in_bounds(i,j-1,nrow,ncol)==0 or grid3[i][j-1]==0:
                 val2 = 1
             else: 
-                val2 = grid[i][j]
+                val2 = grid[i][j-1]
                 
             cpenalty+=abs(val1-val2)
                 

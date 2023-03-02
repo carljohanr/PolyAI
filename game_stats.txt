@@ -271,7 +271,7 @@ Average Score P1:     84.3
 Average Score P2:     72.6
 
 
-Simplified Bärenpark w/Grizzlies
+Simplified Bärenpark w/Grizzlies (Paddington vs Winnie)
 
 ================== STATISTICS ACROSS ALL GAMES ==================
 
@@ -282,4 +282,174 @@ Games Tied:         1
 Win Rate:          90.0%
 
 Average Score P1:     142.6
+Average Score P2:     124.8
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Games Played:       100
+Games Won:          82
+Games Lost:         18
+Games Tied:         0
+Win Rate:          82.0%
+
+Average Score P1:     144.2
+Average Score P2:     124.6
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Games Played:       10
+Games Won:          10
+Games Lost:         0
+Games Tied:         0
+Win Rate:          100.0%
+
+Average Score P1:     147.4
+Average Score P2:     121.5
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Paddington plus vs Paddington
+
+Games Played:       50
+Games Won:          46
+Games Lost:         4
+Games Tied:         0
+Win Rate:          92.0%
+
+Average Score P1:     141.2
+Average Score P2:     115.6
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Paddington vs Paddington plus
+
+Games Played:       10
+Games Won:          7
+Games Lost:         3
+Games Tied:         0
+Win Rate:          70.0%
+
+Average Score P1:     135.6
+Average Score P2:     122.2
+
+
+
+Test - debug error when Paddington plays as 2nd player
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Winnie vs Winnie
+
+Games Played:       50
+Games Won:          26
+Games Lost:         24
+Games Tied:         0
+Win Rate:          52.0%
+
+Average Score P1:     121.9
+Average Score P2:     125.1
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Before fixing
+
+Paddington vs Paddington
+
+Games Played:       50
+Games Won:          49
+Games Lost:         1
+Games Tied:         0
+Win Rate:          98.0%
+
+Average Score P1:     140.5
+Average Score P2:     101.4
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+After fixing
+
+Games Played:       50
+Games Won:          20
+Games Lost:         30
+Games Tied:         0
+Win Rate:          40.0%
+
+Average Score P1:     125.2
+Average Score P2:     127.9
+
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Paddington 5 vs 25
+
+Games Played:       50
+Games Won:          16
+Games Lost:         34
+Games Tied:         0
+Win Rate:          32.0%
+
+Average Score P1:     124.9
+Average Score P2:     131.7
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Paddington 25 vs 5
+
+Games Played:       50
+Games Won:          38
+Games Lost:         10
+Games Tied:         2
+Win Rate:          76.0%
+
+Average Score P1:     135.4
+Average Score P2:     122.6
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Paddgington 15 vs 5 (custom pieces)
+
+Games Played:       50
+Games Won:          24
+Games Lost:         24
+Games Tied:         2
+Win Rate:          48.0%
+
+Average Score P1:     126.1
+Average Score P2:     125.3
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Paddington 1.0 vs 0.5
+
+Games Played:       100
+Games Won:          34
+Games Lost:         65
+Games Tied:         1
+Win Rate:          34.0%
+
+Average Score P1:     122.7
+Average Score P2:     127.7
+
+
+================== STATISTICS ACROSS ALL GAMES ==================
+
+Paddington 0.5 vs 1.0
+
+Games Played:       100
+Games Won:          54
+Games Lost:         44
+Games Tied:         2
+Win Rate:          54.0%
+
+Average Score P1:     126.8
 Average Score P2:     124.8
