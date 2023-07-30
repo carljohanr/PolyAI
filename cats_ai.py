@@ -25,6 +25,7 @@ from cats_score import score_board
 import cats_score
 # from cats_score import score_board_0
 import grids
+import config
 
 # cutoff depth for alphabeta minimax search (default 2)
 Depth = 1
@@ -519,7 +520,7 @@ class Blokus:
             secondp.passed = 0
                         
             render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
-                       [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],self.pieces+self.treasures,self.pieces)     
+                       [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],self.pieces+self.treasures[4:],self.pieces)     
             # time.sleep(TS)
         
         current = self.players[0]          
@@ -541,8 +542,14 @@ class Blokus:
                 current.board.update(current.id, proposal.points,color,1);
                 current.update_player();
                 self.remove_piece(proposal); # remove used piece
+                
+                if current.board.treasure == 0:
+                    render_pieces = self.pieces+self.treasures[4:]
+                else:
+                    render_pieces = self.treasures
+                
                 render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
-                       [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],self.pieces+self.treasures,self.pieces)                     
+                       [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],render_pieces,self.pieces)                     
                 # print(time.time()-t)
 
             else: # end the game if an invalid move is proposed
@@ -571,7 +578,7 @@ class Blokus:
                         
                     # self.remove_piece(proposal); # remove used piece
                     render([firstp.board.state,firstp.board.state2,firstp.board.state3,firstp.board.state4],\
-                           [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],self.pieces+self.treasures,self.pieces)                     
+                           [secondp.board.state,secondp.board.state2,secondp.board.state3,secondp.board.state4],self.pieces+self.treasures[4:],self.pieces)                     
                     # print(time.time()-t)
     
                 else: # end the game if an invalid move is proposed
@@ -621,7 +628,7 @@ class Blokus:
         return not state.to_move.plausible_moves(state.to_move.pieces, state.game, 1, state.to_move.id)
 
 # This function will prompt the user for their piece
-def piece_prompt(options):
+def piece_prompt_old(options):
     # Create an array with the valid piece names
     option_names = [str(x.id) for x in options];
 
@@ -649,8 +656,57 @@ def piece_prompt(options):
     # Once they've chosen a piece...
     return piece;
 
+def piece_prompt(options):
+    choice = -1; # An invalid "choice" to start the following loop
+
+    option_names = [str(x.id) for x in options];
+    print('--- Available options ---')
+    print('Actual options:',option_names)
+    print('Rendered options:',config.xn)
+
+    exclude_list=[]
+
+    # While the user hasn't chosen a valid placment...
+    while (choice < 0 or choice >= len(option_names)) and choice!=100:
+
+        pygame.mouse.set_cursor(*pygame.cursors.arrow)
+        ev = pygame.event.get()
+
+        # proceed events
+        for event in ev:
+          # handle MOUSEBUTTONUP
+          if event.type == pygame.MOUSEBUTTONUP:
+            pos = pygame.mouse.get_pos()
+            # print(pos,config.xn,config.xs)
+            xpos,ypos = pos[0],pos[1]
+            
+            # print(xpos,ypos)
+            
+            if ypos<100:
+                choice = 100
+            else:
+                temp_choice = int((xpos-20)/100)
+                temp_piece = config.xn[temp_choice]
+                print('Debug:',temp_choice,temp_piece)
+                if temp_piece in option_names:
+                    choice = option_names.index(temp_piece)
+            print('Debug choice:',choice)
+            
+            
+            
+            
+
+
+    if choice == 100:
+        piece = 'Pass'
+    else:
+        piece = options[choice]
+    
+    return piece;  
+
+
 # This function will prompt the user for their placement
-def placement_prompt(possibles):
+def placement_prompt_old(possibles):
     choice = -1; # An invalid "choice" to start the following loop
 
     exclude_list=[]
@@ -695,6 +751,66 @@ def placement_prompt(possibles):
     # Once they've made a valid placement...
     placement = possibles[choice - 1];
     return placement;    
+
+
+# This function will prompt the user for their placement
+def placement_prompt(possibles):
+    choice = -1; # An invalid "choice" to start the following loop
+
+    exclude_list=[]
+
+    # While the user hasn't chosen a valid placment...
+    while (choice < 1 or choice > len(possibles)):
+        # print(exclude_list)
+        count = 1; # Used to index each placement; initialized to 1
+        # Prompt the user for their placement
+        # print("Select one of the following placements:")
+        for x in possibles:
+            if x not in exclude_list:
+                printx = x.points
+                printx = [(x+1,y+1) for (x,y) in printx]
+                printx = set(printx)
+                # print(x)
+                # print("     " + str(count) + " - " + str(printx));
+            count += 1;
+
+        pygame.mouse.set_cursor(*pygame.cursors.arrow)
+
+        ev = pygame.event.get()
+
+        # proceed events
+        for event in ev:
+          # handle MOUSEBUTTONUP
+          if event.type == pygame.MOUSEBUTTONUP:
+            pos = pygame.mouse.get_pos()
+            # print(pos)
+            xpos,ypos = pos[0],pos[1]
+            # print(config.params)
+            
+            # p = config.params[0]
+            
+            p = [50,20,20,0,0]
+            
+            this_x = p[3]+int((xpos-p[1])/p[0])
+            this_y = p[4]+int((ypos-p[2])/p[0])
+            
+            # print(this_x,this_y)
+            
+            this_point = (this_x,this_y)
+            # print('P: ', this_point)
+            for p in possibles:
+                if this_point not in p.points and p not in exclude_list:
+                    exclude_list.append(p)
+            if len(possibles)-len(exclude_list) == 1:
+                for z in range(len(possibles)):
+                    if possibles[z] not in exclude_list:
+                        choice = z+1
+            elif len(possibles)-len(exclude_list) == 0:
+                exclude_list = []
+
+    # Once they've made a valid placement...
+    placement = possibles[choice - 1];
+    return placement;       
 
 # Random Strategy: choose an available piece randomly
 def Random_Player(player, game, oval = 1):
@@ -1070,9 +1186,13 @@ def multi_run(repeat, one, two):
         # d1 = [0.1,0.2,0.3,0.4,0.5,0.2,0.2,0.2,0.2,0.2]
         # d2 = [0.2,0.2,0.2,0.2,0.2,0.1,0.2,0.3,0.4,0.5]
 
-        board = Board(9, 22, 0, 0);
-        board1 = Board(9, 22, 1,-0.1,0.2);
-        board2 = Board(9, 22, 2,-0.1,0.2);
+        board1 = Board(9, 22, 0,-0.1, 0.2);
+        board2 = Board(9, 22, 0,-0.1, 0.2);
+        # board1 = Board(9, 22, 1,-0.1,0.2);
+        # board2 = Board(9, 22, 2,-0.1,0.2);
+
+        # board1 = board.copy()
+        # board2 = board.copy()
 
         P1 = Player(1, board1, one) # first player
         P2 = Player(2, board2, two) # second player
@@ -1110,6 +1230,7 @@ def multi_run(repeat, one, two):
                 if sh.id in Names:
                     MCounts[Names.index(sh.id)]+=1
         print("Game end.");
+        input("Press Enter to continue...")
         time.sleep(5*TS)
         # clearGUI()
         TotalMoveTimes.append(MoveTimes)
@@ -1195,8 +1316,8 @@ def main():
     # NOTE: Jeffbot allows the other (human) player to move first because he
     # is polite (and hard-coded that way)
     # multi_run(Games, Greedy_Player, Greedy_Player_v2);
-    Games = 50
-    multi_run(Games, Catbert, Greedy_Player);
+    Games = 10
+    multi_run(Games, Human_Player, Catbert);
 
 if __name__ == '__main__':
     main();
